@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29403.142
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tuexamapi", "tuexamapi.csproj", "{D1A4AC9A-9A64-47B9-9B9D-EE9367689272}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D1A4AC9A-9A64-47B9-9B9D-EE9367689272}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1A4AC9A-9A64-47B9-9B9D-EE9367689272}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1A4AC9A-9A64-47B9-9B9D-EE9367689272}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1A4AC9A-9A64-47B9-9B9D-EE9367689272}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15C05C93-8338-48D9-8EE9-2B7C0D349790}
+	EndGlobalSection
+EndGlobal
