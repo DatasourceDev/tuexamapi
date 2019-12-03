@@ -14,7 +14,12 @@ namespace tuexamapi.Models
         InActive = 0,
         Active = 1,
     }
-
+    public enum Prefix
+    {
+        Mr = 0,
+        Miss = 1,
+        Mrs = 2,
+    }
     public enum QuestionType
     {
         MultipleChoice = 1,
@@ -33,7 +38,11 @@ namespace tuexamapi.Models
         English,
         Bilingual,
     }
-
+    public enum ShowResult
+    {
+        Yes = 0,
+        No,
+    }
     public enum QuestionLevel
     {
         VeryEasy = 0,
@@ -64,13 +73,7 @@ namespace tuexamapi.Models
         Hour,
     }
 
-    public enum Prefix
-    {
-        Mr = 0,
-        Miss,
-        Mrs,
-    }
-
+   
     public enum Role
     {
         Admin = 0,
@@ -140,14 +143,23 @@ namespace tuexamapi.Models
         DataHasNotFound = -101,
         DuplicateData = -102,
         InvalidInput = -103,
+        DataInUse = -104,
     }
 
     public static class ResultMessage
     {
-        public static string Success = "Success";
-        public static string InputHasNotFound = "Input has not found.";
-        public static string DataHasNotFound = "Data has not found.";
-        public static string DuplicateData = "Duplicate data";
-        public static string InvalidInput = "Invalid input";
+        public static string Success = "สำเร็จ";
+        public static string InputHasNotFound = "ไม่พบข้อมูลที่ระบุ";
+        public static string DataHasNotFound = "ไม่พบข้อมูล";
+        public static string DuplicateData = "ข้อมูลซ้ำในระบบ";
+        public static string InvalidInput = "ระบุข้อมูลไม่ถูกต้อง";
+        public static string DataInUse = "ไม่สามารถลบข้อมูลได้ เนื่องจากรายการนี้ได้ถูกนำไปใช้งานแล้ว";
+    }
+
+    public enum ExamingStatus
+    {
+        None,
+        Examing,
+        Done,
     }
 }

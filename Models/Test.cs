@@ -13,7 +13,7 @@ namespace tuexamapi.Models
     {
         [Key]
         public int ID { get; set; }
-        [Required]
+
         [Display(Name ="รหัสแบบทดสอบ")]
         [MaxLength(100)]
         public string TestCode { get; set; }
@@ -27,11 +27,14 @@ namespace tuexamapi.Models
         [MaxLength(1000)]
         public string Description { get; set; }
 
+        [Display(Name = "จำนวนข้อสอบ")]
+        public int? QuestionCnt { get; set; }
+
 
         [Display(Name = "กำหนดข้อสอบ")]
         public TestQuestionType TestQuestionType { get; set; }
 
-        [Display(Name = "หลักสูตร")]
+        [Display(Name = "ลำดับ")]
         public TestCustomOrderType TestCustomOrderType { get; set; }
 
 
@@ -58,7 +61,7 @@ namespace tuexamapi.Models
         public Course Course { get; set; }
 
         [Display(Name = "แสดงผลคะแนน")]
-        public bool ShowResult { get; set; }
+        public ShowResult ShowResult { get; set; }
 
 
         [Required]

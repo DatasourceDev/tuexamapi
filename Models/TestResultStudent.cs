@@ -15,13 +15,13 @@ namespace tuexamapi.Models
         [Key]
         public int ID { get; set; }
 
-       
-
-       
+        [Required]
+        [Display(Name = "แบบทดสอบ")]
+        public int TestID { get; set; }
 
         [Required]
-        [Display(Name = "เวลาที่อนุญาต")]
-        public int TimeCnt { get; set; }
+        [Display(Name = "การเข้าสอบ")]
+        public int TestResultID { get; set; }     
 
         [Required]
         [Display(Name = "จำนวนข้อสอบ")]
@@ -38,6 +38,9 @@ namespace tuexamapi.Models
         public virtual Student Student { get; set; }
         public virtual Exam Exam { get; set; }
 
+        public virtual Test Test { get; set; }
+        public virtual TestResult TestResult { get; set; }
+
 
         [Display(Name = "ผู้สร้าง")]
         [MaxLength(250)]
@@ -50,13 +53,18 @@ namespace tuexamapi.Models
         [Display(Name = "เวลาแก้ไข")]
         public Nullable<DateTime> Update_On { get; set; }
 
-        [Required]
         [Display(Name = "เวลาที่เริ่มทำแบบทดสอบ")]
         public Nullable<DateTime> Start_On { get; set; }
 
-        [Required]
         [Display(Name = "เวลาที่สิ้นสุดแบบทดสอบ")]
         public Nullable<DateTime> End_On { get; set; }
+
+        [Display(Name = "เวลาที่เหลือในการทำแบบทดสอบ")]
+        public int? TimeRemaining { get; set; }
+
+        [Required]
+        [Display(Name = "สถานะการตรวจข้อสอบ")]
+        public ExamingStatus ExamingStatus { get; set; }
 
         /* After done on test*/
         [Required]
@@ -65,15 +73,14 @@ namespace tuexamapi.Models
 
         [Required]
         [Display(Name = "จำนวนข้อที่ทำ")]
-        public int DoQuestionCnt { get; set; }
+        public int AnsweredCnt { get; set; }
 
         [Display(Name = "คะแนนที่ได้")]
-        public int Point { get; set; }
+        public decimal Point { get; set; }
 
         [Display(Name = "จำนวนข้อที่ถูก")]
         public int CorrectCnt { get; set; }
 
-        [Required]
         [Display(Name = "จำนวนข้อที่ผิด")]
         public int WrongCnt { get; set; }
 

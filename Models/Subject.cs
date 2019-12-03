@@ -21,10 +21,15 @@ namespace tuexamapi.Models
 
         [Display(Name = "สถานะการใช้งาน")]
         public StatusType Status { get; set; }
+
+        [Display(Name = "ลำดับการทำข้อสอบ")]
+        public int? Index { get; set; }
+
         [Required]
 
         [Display(Name = "กลุ่มวิชา")]
         public int SubjectGroupID { get; set; }
+
         [Required]
         public virtual SubjectGroup SubjectGroup { get; set; }
 

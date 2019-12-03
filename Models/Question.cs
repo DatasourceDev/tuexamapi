@@ -13,15 +13,16 @@ namespace tuexamapi.Models
     {
         [Key]
         public int ID { get; set; }
-        [Required]
-        [MaxLength(250, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 250 ตัวอักษร")]
+
+        [MaxLength(250)]
         [Display(Name ="รหัสข้อสอบ")]
         public string QuestionCode { get; set; }
         [Display(Name = "ประเภทข้อสอบ")]
         public QuestionType QuestionType { get; set; }
 
         [Display(Name = "หลักสูตร")]
-        public Course Course { get; set; }
+        public bool CourseTh { get; set; }
+        public bool CourseEn { get; set; }
 
         [Display(Name = "คำถาม(ไทย)")]
         [MaxLength(1000)]
@@ -36,7 +37,7 @@ namespace tuexamapi.Models
         public string FileUrl { get; set; }
 
         [Display(Name = "เวลาที่อนุญาตให้ทำข้อสอบ")]
-        public int TimeLimit { get; set; }
+        public int? TimeLimit { get; set; }
 
         [Display(Name = "หน่วยของเวลาที่อนุญาตให้ทำข้อสอบ")]
         public TimeType TimeLimitType { get; set; }

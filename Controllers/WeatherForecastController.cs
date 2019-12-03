@@ -30,15 +30,15 @@ namespace tuexamapi.Controllers
         [HttpGet]
         public IEnumerable<object> Get()
         {
-            var sub = new SubjectGroup();
-            sub.Name = "Test";
-            sub.Status = StatusType.Active;
-            _context.SubjectGroups.Add(sub);
-            _context.SaveChanges();
+           // var sub = new SubjectGroup();
+           // sub.Name = "Test";
+           // sub.Status = StatusType.Active;
+           // _context.SubjectGroups.Add(sub);
+           // _context.SaveChanges();
 
-           var list = _context.SubjectGroups;
+           //var list = _context.SubjectGroups;
 
-            return list.ToArray();
+            return Summaries.ToArray();
         }
     }
 }

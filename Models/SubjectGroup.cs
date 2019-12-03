@@ -17,6 +17,15 @@ namespace tuexamapi.Models
         [Display(Name = "กลุ่มวิชา")]
         public string Name { get; set; }
 
+        [Display(Name = "สีในปฎิทิน")]
+        public string Color1 { get; set; }
+        [Display(Name = "สีในปฎิทิน")]
+        public string Color2 { get; set; }
+
+        [Display(Name = "สีในปฎิทิน")]
+        public string Color3 { get; set; }
+
+
         [Required]
         [Display(Name = "สถานะการใช้งาน")]
         public StatusType Status { get; set; }

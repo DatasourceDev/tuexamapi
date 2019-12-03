@@ -12,7 +12,6 @@ namespace tuexamapi.Models
         [Key]
         public int ID { get; set; }
 
-        [Required]
         [Display(Name = "รหัสผู้ใช้")]
         [MaxLength(250)]
         public string StaffCode { get; set; }
@@ -74,6 +73,8 @@ namespace tuexamapi.Models
         [Display(Name = "เวลาแก้ไข")]
         public Nullable<DateTime> Update_On { get; set; }
         public User User { get; set; }
+
+
 
     }
 

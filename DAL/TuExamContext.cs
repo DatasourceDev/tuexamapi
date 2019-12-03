@@ -24,7 +24,11 @@ namespace tuexamapi.DAL
         public DbSet<SubjectSub> SubjectSubs { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Staff> Staffs { get; set; }
+        public DbSet<StaffRole> StaffRoles { get; set; }
         public DbSet<Test> Tests { get; set; }
+        public DbSet<TestQRandom> TestQRandoms { get; set; }
+        public DbSet<TestQCustom> TestQCustoms { get; set; }
+        
         public DbSet<Exam> Exams { get; set; }
         public DbSet<ExamRegister> ExamRegisters { get; set; }
         public DbSet<AttitudeSetup> AttitudeSetups { get; set; }

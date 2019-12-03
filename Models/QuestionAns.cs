@@ -24,11 +24,11 @@ namespace tuexamapi.Models
 
         [MaxLength(1000)]
         [Display(Name = "คำตอบ(ไทย)")]
-        public string QuestionTh { get; set; }
+        public string AnswerTh { get; set; }
 
         [MaxLength(1000)]
         [Display(Name = "คำตอบ(อังกฤษ)")]
-        public string QuestionEn { get; set; }
+        public string AnswerEn { get; set; }
 
         [MaxLength(1000)]
         [Display(Name = "คำอธิบาย")]

@@ -16,6 +16,8 @@ namespace tuexamapi.Models
         [Display(Name = "รอบสอบ")]
         public int ExamID { get; set; }
 
+      
+
         public virtual Exam Exam { get; set; }
 
 
@@ -35,17 +37,7 @@ namespace tuexamapi.Models
         [Display(Name = "สถานะการตรวจข้อสอบ")]
         public ProveStatus ProveStatus { get; set; }
 
-        [Required]
-        [Display(Name = "ผู้ลงทะเบียน")]
-        public int StudentCnt { get; set; }
-
-        [Required]
         [Display(Name = "ตรวจแล้ว")]
-        public int ProvedCnt { get; set; }
-
-
-        [Required]
-        [Display(Name = "รอตรวจแล้ว")]
-        public int UnprovedCnt { get; set; }
+        public int? ProvedCnt { get; set; }
     }
 }

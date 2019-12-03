@@ -12,6 +12,9 @@ namespace tuexamapi.Models
         [Key]
         public int ID { get; set; }
 
+        public int? Index { get; set; }
+
+
         [Display(Name = "คำตอบแบบข้อความ")]
         [MaxLength(250)]
         public string TextAnswer { get; set; }
@@ -31,10 +34,14 @@ namespace tuexamapi.Models
         [Display(Name = "ข้อสอบ")]
         public int QuestionID { get; set; }
 
-        [Required]
         [Display(Name = "คำตอบ")]
-        public int QuestionAnsID { get; set; }
+        public int? QuestionAnsID { get; set; }
 
+        
+
+
+        [Display(Name = "ตอบคำถามแล้ว")]
+        public bool Answered { get; set; }
         public virtual TestResultStudent TestResultStudent { get; set; }
         public virtual Question Question { get; set; }
         public virtual QuestionAns QuestionAns { get; set; }
@@ -54,6 +61,7 @@ namespace tuexamapi.Models
         /* After done on test*/
         [Display(Name = "คะแนนที่ได้")]
         public int Point { get; set; }
+
 
     }
 }

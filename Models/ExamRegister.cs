@@ -12,27 +12,7 @@ namespace tuexamapi.Models
     public class ExamRegister
     {
         [Key]
-        public int ID { get; set; }
-        [Required]
-        [MaxLength(250, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 250 ตัวอักษร")]
-        [Display(Name ="รหัสรอบสอบ")]
-        public string ExamCode { get; set; }
-
-        [Required]
-        [Display(Name = "วันที่สอบ")]
-        public DateTime ExamDate { get; set; }
-
-        [Required]
-        [Display(Name = "รอบสอบ")]
-        public ExamPeriod ExamPeriod { get; set; }
-
-        [Required]
-        [Display(Name = "รูปแบบการลงทะเบียน")]
-        public ExamRegisterType ExamRegisterType { get; set; }
-
-        [Display(Name = "สถานะการใช้งาน")]
-        public StatusType Status { get; set; }
-
+        public int ID { get; set; }       
         [Required]
         [Display(Name = "รอบสอบ")]
         public int ExamID { get; set; }
@@ -40,6 +20,9 @@ namespace tuexamapi.Models
         [Required]
         [Display(Name = "ผู้เข้าสอบ")]
         public int StudentID { get; set; }
+
+        public ExamRegisterType ExamRegisterType { get; set; }
+
 
         [Required]
         public virtual Exam Exam { get; set; }

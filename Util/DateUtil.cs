@@ -139,14 +139,14 @@ namespace tuexamapi.Util
             }
         }
 
-        public static string ToDisplayDate(Nullable<DateTime> d, string indicator = "/")
+        public static string ToDisplayDate(Nullable<DateTime> d)
         {
             try
             {
                 if (d.HasValue)
                 {
                     CultureInfo UsaCulture = new CultureInfo("en-US");
-                    return d.Value.ToString("dd" + indicator + "MM" + indicator + "yyyy", UsaCulture);
+                    return d.Value.ToString("dd/MM/yyyy", UsaCulture);
                 }
                 else
                 {
@@ -268,7 +268,7 @@ namespace tuexamapi.Util
                 if (d.HasValue)
                 {
                     CultureInfo culture = new CultureInfo("en-us");
-                    return d.Value.ToString("dd/MM/yyyy HH:mm:ss", culture);
+                    return d.Value.ToString("dd/MM/yyyy HH:mm", culture);
                 }
                 else
                 {
