@@ -36,16 +36,35 @@ namespace tuexamapi.Controllers
         public object listAllgroup(string text_search, string status_search)
         {
             var group = _context.SubjectGroups.Where(w => 1 == 1);
-            if (!string.IsNullOrEmpty(text_search))
-                group = group.Where(w => w.Name.Contains(text_search));
+
             if (!string.IsNullOrEmpty(status_search))
                 group = group.Where(w => w.Status == status_search.toStatus());
 
-            return group.Select(s => new
+            var groups = new List<SubjectGroup>();
+            if (!string.IsNullOrEmpty(text_search))
+            {
+                var text_splits = text_search.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var text_split in text_splits)
+                {
+                    if (!string.IsNullOrEmpty(text_split))
+                    {
+                        var text = text_split.Trim();
+                        groups.AddRange(group.Where(w => w.Name.Contains(text)));
+                    }
+                }
+                groups = groups.Distinct().ToList();
+            }
+            else
+            {
+                groups = group.ToList();
+            }
+
+            return groups.Select(s => new
             {
                 id = s.ID,
                 name = s.Name,
                 status = s.Status.toStatusName(),
+                doexamorder = s.DoExamOrder,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -64,6 +83,7 @@ namespace tuexamapi.Controllers
                     id = s.ID,
                     name = s.Name,
                     status = s.Status.toStatusName(),
+                    doexamorder = s.DoExamOrder,
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -78,12 +98,15 @@ namespace tuexamapi.Controllers
         {
             var group = _context.SubjectGroups.Where(w => w.ID == id).Select(s => new
             {
+                result = ResultCode.Success,
+                message = ResultMessage.Success,
                 id = s.ID,
                 name = s.Name,
                 status = s.Status,
                 color1 = s.Color1,
                 color2 = s.Color2,
                 color3 = s.Color3,
+                doexamorder = s.DoExamOrder,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -118,6 +141,7 @@ namespace tuexamapi.Controllers
             group.Update_By = model.Update_By;
             group.Status = model.Status;
             group.Name = model.Name;
+            group.DoExamOrder = model.DoExamOrder;
 
             _context.SubjectGroups.Add(group);
             _context.SaveChanges();
@@ -146,6 +170,8 @@ namespace tuexamapi.Controllers
                 group.Color1 = model.Color1;
                 group.Color2 = model.Color2;
                 group.Color3 = model.Color3;
+                group.DoExamOrder = model.DoExamOrder;
+
                 _context.SaveChanges();
                 return CreatedAtAction(nameof(update), new { result = ResultCode.Success, message = ResultMessage.Success });
             }
@@ -174,11 +200,20 @@ namespace tuexamapi.Controllers
                 var subs = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID);
                 if (subs.Count() > 0)
                     _context.SubjectSubs.RemoveRange(subs);
+
+                var examsetups = _context.ExamSetups.Where(w => w.SubjectID == subject.ID);
+                if (examsetups.Count() > 0)
+                    _context.ExamSetups.RemoveRange(examsetups);
             }
+
+            var gexamsetups = _context.ExamSetups.Where(w => w.SubjectGroupID == id);
+            if (gexamsetups.Count() > 0)
+                _context.ExamSetups.RemoveRange(gexamsetups);
+
             if (subjects.Count() > 0)
                 _context.Subjects.RemoveRange(subjects);
 
-            
+
             _context.SubjectGroups.Remove(group);
             _context.SaveChanges();
             return CreatedAtAction(nameof(delete), new { result = ResultCode.Success, message = ResultMessage.Success });

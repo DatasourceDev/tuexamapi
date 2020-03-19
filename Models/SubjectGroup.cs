@@ -25,7 +25,9 @@ namespace tuexamapi.Models
         [Display(Name = "สีในปฎิทิน")]
         public string Color3 { get; set; }
 
-
+        [Display(Name = "ทำข้อสอบแต่ละวิชาตามลำดับที่กำหนด")]
+        public bool DoExamOrder { get; set; }
+        
         [Required]
         [Display(Name = "สถานะการใช้งาน")]
         public StatusType Status { get; set; }

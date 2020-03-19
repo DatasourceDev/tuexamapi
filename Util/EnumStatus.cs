@@ -271,7 +271,7 @@ namespace tuexamapi.Util
                     str = QuestionType.Assignment;
                     break;
                 case "ข้อสอบแบบเลือกตอบประกอบบทความ (Reading Text And Multiple Choice)":
-                    str = QuestionType.ReadingTextAndMultipleChoice;
+                    str = QuestionType.ReadingText;
                     break;
                 case "ข้อสอบแบบวัดทัศนคติ (Attitude)":
                     str = QuestionType.Attitude;
@@ -295,11 +295,84 @@ namespace tuexamapi.Util
                     str = QuestionType.Assignment;
                     break;
                 case "7":
-                    str = QuestionType.ReadingTextAndMultipleChoice;
+                    str = QuestionType.ReadingText;
                     break;
                 case "8":
                     str = QuestionType.Attitude;
                     break;
+                case "9":
+                    str = QuestionType.ReadingMultipleChoice;
+                    break;
+                case "10":
+                    str = QuestionType.ReadingTrueFalse;
+                    break;
+                case "11":
+                    str = QuestionType.ReadingMultipleMatching;
+                    break;
+                case "12":
+                    str = QuestionType.ReadingShortAnswer;
+                    break;
+                case "13":
+                    str = QuestionType.ReadingEssay;
+                    break;
+                case "14":
+                    str = QuestionType.ReadingAssignment;
+                    break;
+                case "15":
+                    str = QuestionType.ReadingAttitude;
+                    break;
+                case "16":
+                    str = QuestionType.MultipleMatchingSub;
+                    break;
+                case "MC":
+                    str = QuestionType.MultipleChoice;
+                    break;
+                case "TF":
+                    str = QuestionType.TrueFalse;
+                    break;
+                case "MM":
+                    str = QuestionType.MultipleMatching;
+                    break;
+                case "MS":
+                    str = QuestionType.MultipleMatchingSub;
+                    break;
+                case "SA":
+                    str = QuestionType.ShortAnswer;
+                    break;
+                case "ES":
+                    str = QuestionType.Essay;
+                    break;
+                case "AS":
+                    str = QuestionType.Assignment;
+                    break;
+                case "RT":
+                    str = QuestionType.ReadingText;
+                    break;
+                case "AT":
+                    str = QuestionType.Attitude;
+                    break;
+                case "RMC":
+                    str = QuestionType.ReadingMultipleChoice;
+                    break;
+                case "RTF":
+                    str = QuestionType.ReadingTrueFalse;
+                    break;
+                case "RMM":
+                    str = QuestionType.ReadingMultipleMatching;
+                    break;
+                case "RSA":
+                    str = QuestionType.ReadingShortAnswer;
+                    break;
+                case "RES":
+                    str = QuestionType.ReadingEssay;
+                    break;
+                case "RAS":
+                    str = QuestionType.ReadingAssignment;
+                    break;
+                case "RAT":
+                    str = QuestionType.ReadingAttitude;
+                    break;
+
                 default:
                     break;
             }
@@ -328,7 +401,7 @@ namespace tuexamapi.Util
                 case QuestionType.Assignment:
                     str = "ข้อสอบแบบส่งงาน (Assignment)";
                     break;
-                case QuestionType.ReadingTextAndMultipleChoice:
+                case QuestionType.ReadingText:
                     str = "ข้อสอบแบบเลือกตอบประกอบบทความ (Reading Text And Multiple Choice)";
                     break;
                 case QuestionType.Attitude:
@@ -362,7 +435,7 @@ namespace tuexamapi.Util
                 case QuestionType.Assignment:
                     str = "Assignment";
                     break;
-                case QuestionType.ReadingTextAndMultipleChoice:
+                case QuestionType.ReadingText:
                     str = "Reading Text And Multiple Choice";
                     break;
                 case QuestionType.Attitude:
@@ -388,20 +461,23 @@ namespace tuexamapi.Util
                 case QuestionType.MultipleMatching:
                     str = "MM";
                     break;
+                case QuestionType.MultipleMatchingSub:
+                    str = "MS";
+                    break;
                 case QuestionType.ShortAnswer:
                     str = "SA";
                     break;
                 case QuestionType.Essay:
-                    str = "ESS";
+                    str = "ES";
                     break;
                 case QuestionType.Assignment:
-                    str = "ASS";
+                    str = "AS";
                     break;
-                case QuestionType.ReadingTextAndMultipleChoice:
-                    str = "RTMC";
+                case QuestionType.ReadingText:
+                    str = "RT";
                     break;
                 case QuestionType.Attitude:
-                    str = "ATT";
+                    str = "AT";
                     break;
                 default:
                     break;
@@ -442,7 +518,7 @@ namespace tuexamapi.Util
             }
             return str;
         }
-        public static string toApprovalStatusName(this TestApprovalType statusType)
+        public static string toTestApprovalStatusName(this TestApprovalType statusType)
         {
             string status = "";
             switch (statusType)
@@ -465,7 +541,62 @@ namespace tuexamapi.Util
             return status;
         }
 
-
+        public static QuestionApprovalType toQuestionApprovalStatus(this string text)
+        {
+            QuestionApprovalType str = QuestionApprovalType.Draft;
+            switch (text)
+            {
+                case "ร่าง":
+                    str = QuestionApprovalType.Draft;
+                    break;
+                case "รอการกลั่นกรอง":
+                    str = QuestionApprovalType.Pending;
+                    break;
+                case "กลั่นกรองแล้ว":
+                    str = QuestionApprovalType.Approved;
+                    break;
+                case "ไม่ผ่านการกลั่นกรอง":
+                    str = QuestionApprovalType.Reject;
+                    break;
+                case "0":
+                    str = QuestionApprovalType.Draft;
+                    break;
+                case "1":
+                    str = QuestionApprovalType.Pending;
+                    break;
+                case "2":
+                    str = QuestionApprovalType.Approved;
+                    break;
+                case "3":
+                    str = QuestionApprovalType.Reject;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toQuestionApprovalStatusName(this QuestionApprovalType statusType)
+        {
+            string status = "";
+            switch (statusType)
+            {
+                case QuestionApprovalType.Draft:
+                    status = "ร่าง";
+                    break;
+                case QuestionApprovalType.Pending:
+                    status = "รอการกลั่นกรอง";
+                    break;
+                case QuestionApprovalType.Approved:
+                    status = "กลั่นกรองแล้ว";
+                    break;
+                case QuestionApprovalType.Reject:
+                    status = "ไม่ผ่านการกลั่นกรอง";
+                    break;
+                default:
+                    break;
+            }
+            return status;
+        }
         public static QuestionLevel toQuestionLevel(this string text)
         {
             QuestionLevel lvl = QuestionLevel.Mid;
@@ -656,13 +787,13 @@ namespace tuexamapi.Util
             switch (statusType)
             {
                 case TimeType.Second:
-                    str = "วินาที";
+                    str = "second";
                     break;
                 case TimeType.Minute:
-                    str = "นาที";
+                    str = "minute";
                     break;
                 case TimeType.Hour:
-                    str = "ชั่วโมง";
+                    str = "hour";
                     break;
                 default:
                     break;
@@ -681,6 +812,9 @@ namespace tuexamapi.Util
                 case "กำลังสอบ":
                     str = ExamingStatus.Examing;
                     break;
+                case "ไม่เข้าสอบ":
+                    str = ExamingStatus.Absent;
+                    break;
                 case "สิ้นสุดแบบทดสอบ":
                     str = ExamingStatus.Done;
                     break;
@@ -691,6 +825,9 @@ namespace tuexamapi.Util
                     str = ExamingStatus.Examing;
                     break;
                 case "2":
+                    str = ExamingStatus.Absent;
+                    break;
+                case "3":
                     str = ExamingStatus.Done;
                     break;
                 default:
@@ -708,6 +845,9 @@ namespace tuexamapi.Util
                     break;
                 case ExamingStatus.Examing:
                     str = "กำลังสอบ";
+                    break;
+                case ExamingStatus.Absent:
+                    str = "ไม่เข้าสอบ";
                     break;
                 case ExamingStatus.Done:
                     str = "สิ้นสุดแบบทดสอบ";
@@ -750,6 +890,363 @@ namespace tuexamapi.Util
                     break;
                 case ProveStatus.Proved:
                     str = "ตรวจแล้ว";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static AttitudeAnsType toAttitudeAnsType(this string text)
+        {
+            AttitudeAnsType str = AttitudeAnsType.Type3;
+            switch (text)
+            {
+                case "2 ตัวเลือก":
+                    str = AttitudeAnsType.Type2;
+                    break;
+                case "3 ตัวเลือก":
+                    str = AttitudeAnsType.Type3;
+                    break;
+                case "4 ตัวเลือก":
+                    str = AttitudeAnsType.Type4;
+                    break;
+                case "5 ตัวเลือก":
+                    str = AttitudeAnsType.Type5;
+                    break;
+                case "6 ตัวเลือก":
+                    str = AttitudeAnsType.Type6;
+                    break;
+                case "7 ตัวเลือก":
+                    str = AttitudeAnsType.Type7;
+                    break;
+                case "2":
+                    str = AttitudeAnsType.Type2;
+                    break;
+                case "3":
+                    str = AttitudeAnsType.Type3;
+                    break;
+                case "4":
+                    str = AttitudeAnsType.Type4;
+                    break;
+                case "5":
+                    str = AttitudeAnsType.Type5;
+                    break;
+                case "6":
+                    str = AttitudeAnsType.Type6;
+                    break;
+                case "7":
+                    str = AttitudeAnsType.Type7;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toAttitudeAnsTypeName(this AttitudeAnsType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case AttitudeAnsType.Type2:
+                    str = "2 ตัวเลือก";
+                    break;
+                case AttitudeAnsType.Type3:
+                    str = "3 ตัวเลือก";
+                    break;
+                case AttitudeAnsType.Type4:
+                    str = "4 ตัวเลือก";
+                    break;
+                case AttitudeAnsType.Type5:
+                    str = "5 ตัวเลือก";
+                    break;
+                case AttitudeAnsType.Type6:
+                    str = "6 ตัวเลือก";
+                    break;
+                case AttitudeAnsType.Type7:
+                    str = "7 ตัวเลือก";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static AttitudeAnsSubType toAttitudeAnsSubType(this string text)
+        {
+            AttitudeAnsSubType str = AttitudeAnsSubType.Sub1;
+            switch (text)
+            {
+                case "แบบที่ 1":
+                    str = AttitudeAnsSubType.Sub1;
+                    break;
+                case "แบบที่ 2":
+                    str = AttitudeAnsSubType.Sub2;
+                    break;
+                case "1":
+                    str = AttitudeAnsSubType.Sub1;
+                    break;
+                case "2":
+                    str = AttitudeAnsSubType.Sub2;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toAttitudeAnsSubType(this AttitudeAnsSubType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case AttitudeAnsSubType.Sub1:
+                    str = "แบบที่ 1";
+                    break;
+                case AttitudeAnsSubType.Sub2:
+                    str = "แบบที่ 2";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static AuthType toAuthType(this string text)
+        {
+            AuthType str = AuthType.Login;
+            switch (text)
+            {
+                case "เข้าสู่ระบบ":
+                    str = AuthType.Login;
+                    break;
+                case "ออกจากระบบ":
+                    str = AuthType.Logout;
+                    break;
+                case "0":
+                    str = AuthType.Login;
+                    break;
+                case "1":
+                    str = AuthType.Logout;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toAuthType(this AuthType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case AuthType.Login:
+                    str = "เข้าสู่ระบบ";
+                    break;
+                case AuthType.Logout:
+                    str = "ออกจากระบบ";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+
+        public static ExamRegisterType toExamRegisterType(this string text)
+        {
+            ExamRegisterType str = ExamRegisterType.Advance;
+            switch (text)
+            {
+                case "ล่วงหน้า":
+                    str = ExamRegisterType.Advance;
+                    break;
+                case "Walk In":
+                    str = ExamRegisterType.WalkIn;
+                    break;
+                case "0":
+                    str = ExamRegisterType.Advance;
+                    break;
+                case "1":
+                    str = ExamRegisterType.WalkIn;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toExamRegisterType(this ExamRegisterType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case ExamRegisterType.Advance:
+                    str = "ล่วงหน้า";
+                    break;
+                case ExamRegisterType.WalkIn:
+                    str = "Walk In";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static string toTestDoExamType(this TestDoExamType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case TestDoExamType.ForwardAndBackword:
+                    str = "เดินหน้าและถอยหลัง";
+                    break;
+                case TestDoExamType.ForwardOnly:
+                    str = "เดินหน้าอย่างเดียว";
+                    break;                
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static TestDoExamType toTestDoExamType(this string text)
+        {
+            TestDoExamType str = TestDoExamType.ForwardAndBackword;
+            switch (text)
+            {
+                case "เดินหน้าและถอยหลัง":
+                    str = TestDoExamType.ForwardAndBackword;
+                    break;
+                case "เดินหน้าอย่างเดียว":
+                    str = TestDoExamType.ForwardOnly;
+                    break;
+              
+                case "0":
+                    str = TestDoExamType.ForwardAndBackword;
+                    break;
+                case "1":
+                    str = TestDoExamType.ForwardOnly;
+                    break;                
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static string toTestQuestionType(this TestQuestionType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case TestQuestionType.Custom:
+                    str = "กำหนดเอง";
+                    break;
+                case TestQuestionType.Random:
+                    str = "สุ่ม";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static TestQuestionType toTestQuestionType(this string text)
+        {
+            TestQuestionType str = TestQuestionType.Custom;
+            switch (text)
+            {
+                case "กำหนดเอง":
+                    str = TestQuestionType.Custom;
+                    break;
+                case "สุ่ม":
+                    str = TestQuestionType.Random;
+                    break;
+
+                case "0":
+                    str = TestQuestionType.Custom;
+                    break;
+                case "1":
+                    str = TestQuestionType.Random;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static string toTestCustomOrderType(this TestCustomOrderType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case TestCustomOrderType.Order:
+                    str = "เรียงลำดับ";
+                    break;
+                case TestCustomOrderType.Random:
+                    str = "สลับข้อ";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static TestCustomOrderType toTestCustomOrderType(this string text)
+        {
+            TestCustomOrderType str = TestCustomOrderType.Order;
+            switch (text)
+            {
+                case "เรียงลำดับ":
+                    str = TestCustomOrderType.Order;
+                    break;
+                case "สลับข้อ":
+                    str = TestCustomOrderType.Random;
+                    break;
+
+                case "0":
+                    str = TestCustomOrderType.Order;
+                    break;
+                case "1":
+                    str = TestCustomOrderType.Random;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static string toShowResult(this ShowResult statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case ShowResult.Yes:
+                    str = "แสดง";
+                    break;
+                case ShowResult.No:
+                    str = "ไม่แสดง";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+
+        public static ShowResult toShowResult(this string text)
+        {
+            ShowResult str = ShowResult.Yes;
+            switch (text)
+            {
+                case "แสดง":
+                    str = ShowResult.Yes;
+                    break;
+                case "ไม่แสดง":
+                    str = ShowResult.No;
+                    break;
+
+                case "0":
+                    str = ShowResult.Yes;
+                    break;
+                case "1":
+                    str = ShowResult.No;
                     break;
                 default:
                     break;

@@ -16,10 +16,7 @@ namespace tuexamapi.Models
         [Display(Name = "รอบสอบ")]
         public int ExamID { get; set; }
 
-      
-
         public virtual Exam Exam { get; set; }
-
 
         [Display(Name = "ผู้สร้าง")]
         [MaxLength(250)]

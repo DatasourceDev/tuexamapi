@@ -37,8 +37,7 @@ namespace tuexamapi.Controllers
         public object listAlltest(string text_search, string status_search, string group_search, string subject_search, int pageno = 1)
         {
             var test = _context.Tests.Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => 1 == 1);
-            if (!string.IsNullOrEmpty(text_search))
-                test = test.Where(w => w.Name.Contains(text_search));
+
             if (!string.IsNullOrEmpty(status_search))
                 test = test.Where(w => w.Status == status_search.toStatus());
 
@@ -55,29 +54,50 @@ namespace tuexamapi.Controllers
                     test = test.Where(w => w.Subject.SubjectGroupID == groupID);
             }
 
+            var tests = new List<Test>();
+            if (!string.IsNullOrEmpty(text_search))
+            {
+                var text_splits = text_search.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var text_split in text_splits)
+                {
+                    if (!string.IsNullOrEmpty(text_split))
+                    {
+                        var text = text_split.Trim();
+                        tests.AddRange(test.Where(w => w.Name.Contains(text)));
+                    }
+                }
+                tests = tests.Distinct().ToList();
+            }
+            else
+            {
+                tests = test.ToList();
+            }
+
             int skipRows = (pageno - 1) * 25;
-            var itemcnt = test.Count();
+            var itemcnt = tests.Count();
             var pagelen = itemcnt / 25;
             if (itemcnt % 25 > 0)
                 pagelen += 1;
             return CreatedAtAction(nameof(listAlltest), new
             {
-                data = test.Select(s => new
+                data = tests.Select(s => new
                 {
                     id = s.ID,
                     name = s.Name,
                     status = s.Status.toStatusName(),
                     group = s.Subject.SubjectGroup.Name,
                     subject = s.Subject.Name,
-                    subjectindex = s.Subject.Index,
+                    subjectindex = s.Subject.Order,
                     testcode = s.TestCode,
-                    approvalstatus = s.ApprovalStatus.toApprovalStatusName(),
+                    approvalstatus = s.ApprovalStatus,
+                    approvalstatusname = s.ApprovalStatus.toTestApprovalStatusName(),
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
                 }).OrderBy(o => o.group).ThenBy(o2 => o2.subjectindex).ThenBy(o3 => o3.name).Skip(skipRows).Take(25).ToArray(),
-                pagelen = pagelen
+                pagelen = pagelen,
+                itemcnt = itemcnt,
             }); ;
 
         }
@@ -86,7 +106,7 @@ namespace tuexamapi.Controllers
         [Route("listActivetest")]
         public object listActivetest(string group_search, string subject_search)
         {
-            var test = _context.Tests.Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => w.Status == StatusType.Active);
+            var test = _context.Tests.Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => w.Status == StatusType.Active & w.ApprovalStatus == TestApprovalType.Approved);
             if (!string.IsNullOrEmpty(subject_search))
             {
                 var subjectID = NumUtil.ParseInteger(subject_search);
@@ -106,10 +126,11 @@ namespace tuexamapi.Controllers
                     name = s.Name,
                     status = s.Status.toStatusName(),
                     subject = s.Subject.Name,
-                    subjectindex = s.Subject.Index,
+                    subjectindex = s.Subject.Order,
                     group = s.Subject.SubjectGroup.Name,
                     testcode = s.TestCode,
-                    approvalstatus = s.ApprovalStatus.toApprovalStatusName(),
+                    approvalstatus = s.ApprovalStatus,
+                    approvalstatusname = s.ApprovalStatus.toTestApprovalStatusName(),
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -118,15 +139,19 @@ namespace tuexamapi.Controllers
             return CreatedAtAction(nameof(listActivetest), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
         }
 
+
         [HttpGet]
         [Route("gettest")]
         public object gettest(int? id)
         {
             var test = _context.Tests.Include(i => i.SubjectGroup).Include(i => i.Subject).Where(w => w.ID == id).Select(s => new
             {
+                result = ResultCode.Success,
+                message = ResultMessage.Success,
                 id = s.ID,
                 name = s.Name,
                 status = s.Status,
+                statusname = s.Status.toStatusName(),
                 subjectid = s.SubjectID,
                 subject = s.Subject.Name,
                 groupid = s.Subject.SubjectGroupID,
@@ -135,12 +160,20 @@ namespace tuexamapi.Controllers
                 description = s.Description,
                 timelimit = s.TimeLimit,
                 timelimittype = s.TimeLimitType,
+                timelimittypename = s.TimeLimitType.toTimeType(),
                 testdoexamtype = s.TestDoExamType,
+                testdoexamtypename = s.TestDoExamType.toTestDoExamType(),
                 course = s.Course,
+                coursename = s.Course.toCourseName(),
                 showresult = s.ShowResult,
+                showresultname = s.ShowResult.toShowResult(),
                 approvalstatus = s.ApprovalStatus,
+                approvalstatusname = s.ApprovalStatus.toTestApprovalStatusName(),
                 testquestiontype = s.TestQuestionType,
+                testquestiontypename = s.TestQuestionType.toTestQuestionType(),
                 testcustomordertype = s.TestCustomOrderType,
+                testcustomordertypename = s.TestCustomOrderType.toTestCustomOrderType(),
+                remark =s.Remark,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -263,6 +296,16 @@ namespace tuexamapi.Controllers
             //if (tstudents2.Count() > 0) { }
             //    _context.TestResultStudents.RemoveRange(tstudents2);
 
+            var approvals = _context.TestApprovals.Where(w => w.TestID == id);
+            foreach (var appr in approvals)
+            {
+                var apprstaffs = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == appr.ID);
+                if (apprstaffs.Count() > 0)
+                    _context.TestApprovalStaffs.RemoveRange(apprstaffs);
+
+                _context.TestApprovals.Remove(appr);
+            }
+
             _context.Tests.Remove(test);
             _context.SaveChanges();
             return CreatedAtAction(nameof(delete), new { result = ResultCode.Success, message = ResultMessage.Success });
@@ -282,7 +325,7 @@ namespace tuexamapi.Controllers
             return qrandom.Select(s => new
             {
                 id = s.ID,
-                questiontype = s.QuestionType.toQuestionType(),
+                questiontype = s.QuestionType.toQuestionTypeMin(),
                 questiontypeid = s.QuestionType,
                 testid = s.TestID,
                 subid = s.SubjectSubID,
@@ -307,6 +350,8 @@ namespace tuexamapi.Controllers
         {
             var qrandom = _context.TestQRandoms.Where(w => w.ID == id).Select(s => new
             {
+                result = ResultCode.Success,
+                message = ResultMessage.Success,
                 id = s.ID,
                 questiontype = s.QuestionType,
                 testid = s.TestID,
@@ -441,71 +486,87 @@ namespace tuexamapi.Controllers
             if (tID > 0)
                 qcustom = qcustom.Where(w => w.TestID == tID);
 
-            return qcustom.Select(s => new
+            var questioncnt = qcustom.Where(w => w.Question.QuestionType != QuestionType.ReadingText && w.Question.QuestionType != QuestionType.MultipleMatching).Count();          
+            questioncnt += _context.Questions.Where(w => w.QuestionParentID.HasValue && qcustom.Select(s => s.Question.ID).Contains(w.QuestionParentID.Value)).Count();
+            return CreatedAtAction(nameof(listAlltest), new
             {
-                id = s.ID,
-                testid = s.TestID,
-                order = s.Order,
-                questionid = s.QuestionID,
-                questionth = s.Question.QuestionTh,
-                questionen = s.Question.QuestionEn,
-                questionlevel = s.Question.QuestionLevel.toQuestionLevelName(),
-                create_on = DateUtil.ToDisplayDateTime(s.Create_On),
-                create_by = s.Create_By,
-                update_on = DateUtil.ToDisplayDateTime(s.Update_On),
-                update_by = s.Update_By,
-            }).OrderBy(o => o.id).ToArray()
-           ;
-
+                data = qcustom.Select(s => new
+                {
+                    id = s.ID,
+                    testid = s.TestID,
+                    order = s.Order,
+                    questionid = s.QuestionID,
+                    questionth = s.Question.QuestionTh,
+                    questionen = s.Question.QuestionEn,
+                    questionlevel = s.Question.QuestionLevel.toQuestionLevelName(),
+                    questiontype = s.Question.QuestionType.toQuestionTypeMin2(),
+                    childcnt = _context.Questions.Where(w => w.QuestionParentID == s.QuestionID).Count(),
+                    create_on = DateUtil.ToDisplayDateTime(s.Create_On),
+                    create_by = s.Create_By,
+                    update_on = DateUtil.ToDisplayDateTime(s.Update_On),
+                    update_by = s.Update_By,
+                }).OrderBy(o => o.order).ToArray(),              
+                questioncnt = questioncnt,
+            }); 
         }
 
 
         [HttpGet]
         [Route("chooseqcustom")]
-        public object chooseqcustom(string choose, string tid)
+        public object chooseqcustom(string choose, string tid, string update_by)
         {
             if (choose == null)
                 return CreatedAtAction(nameof(chooseqcustom), new { result = ResultCode.Success, message = ResultMessage.Success });
 
-            var chs = choose.Split(";");
+            var chs = choose.Split(";", StringSplitOptions.RemoveEmptyEntries);
             foreach (var ch in chs)
             {
                 if (!string.IsNullOrEmpty(ch))
                 {
+                    var qid = NumUtil.ParseInteger(ch);
                     var tqcustom = new TestQCustom();
-                    tqcustom.QuestionID = NumUtil.ParseInteger(ch);
+                    tqcustom.QuestionID = qid;
                     tqcustom.TestID = NumUtil.ParseInteger(tid);
                     tqcustom.Create_On = DateUtil.Now();
                     tqcustom.Update_On = DateUtil.Now();
+                    tqcustom.Update_By = update_by;
+                    tqcustom.Create_By = update_by;
                     _context.TestQCustoms.Add(tqcustom);
                 }
             }
             _context.SaveChanges();
             var testID = NumUtil.ParseInteger(tid);
             var i = 1;
-            var questions = _context.TestQCustoms.Where(w => w.TestID == testID).OrderBy(w => w.ID);
+            var questions = _context.TestQCustoms.Where(w => w.TestID == testID).OrderBy(w => w.QuestionID);
             foreach (var q in questions)
             {
+                q.Update_On = DateUtil.Now();
+                q.Update_By = update_by;
                 q.Order = i;
                 i++;
             }
             var test = _context.Tests.Where(w => w.ID == testID).FirstOrDefault();
             if (test != null)
+            {
+                test.Update_On = DateUtil.Now();
+                test.Update_By = update_by;
                 test.QuestionCnt = i - 1;
+            }
+
             _context.SaveChanges();
             return CreatedAtAction(nameof(chooseqcustom), new { result = ResultCode.Success, message = ResultMessage.Success });
         }
 
         [HttpGet]
         [Route("qcustomdelete")]
-        public object qcustomdelete(int? id)
+        public object qcustomdelete(int? id, string update_by)
         {
             if (!id.HasValue)
-                return CreatedAtAction(nameof(delete), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+                return CreatedAtAction(nameof(qcustomdelete), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
 
             var qcustom = _context.TestQCustoms.Where(w => w.ID == id).FirstOrDefault();
             if (qcustom == null)
-                return CreatedAtAction(nameof(delete), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+                return CreatedAtAction(nameof(qcustomdelete), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
 
             var testID = qcustom.TestID;
 
@@ -515,15 +576,389 @@ namespace tuexamapi.Controllers
             var questions = _context.TestQCustoms.Where(w => w.TestID == testID).OrderBy(w => w.ID);
             foreach (var q in questions)
             {
+                q.Update_On = DateUtil.Now();
+                q.Update_By = update_by;
                 q.Order = i;
                 i++;
             }
             var test = _context.Tests.Where(w => w.ID == testID).FirstOrDefault();
             if (test != null)
+            {
+                test.Update_On = DateUtil.Now();
+                test.Update_By = update_by;
                 test.QuestionCnt = i - 1;
+            }
+
             _context.SaveChanges();
             return CreatedAtAction(nameof(qcustomdelete), new { result = ResultCode.Success, message = ResultMessage.Success });
         }
+
+
+        [HttpGet]
+        [Route("qcustommoveup")]
+        public object qcustommoveup(int? id, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(qcustommoveup), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestQCustoms.Where(w => w.ID == id).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(qcustommoveup), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            var test = _context.Tests.Where(w => w.ID == model.TestID).FirstOrDefault();
+            if (test != null)
+            {
+                test.Update_On = DateUtil.Now();
+                test.Update_By = update_by;
+            }
+            var latestindex = this._context.TestQCustoms.Where(w => w.Order < model.Order & w.TestID == model.TestID).OrderByDescending(o => o.Order).FirstOrDefault();
+            var i = 1;
+            foreach (var item in this._context.TestQCustoms.Where(w => w.TestID == model.TestID).OrderBy(o => o.Order))
+            {
+                item.Update_On = DateUtil.Now();
+                item.Update_By = update_by;
+                if (latestindex != null && latestindex.ID == item.ID)
+                {
+                    latestindex.Order = i + 1;
+                }
+                else if (latestindex != null && model.ID == item.ID)
+                {
+                    item.Order = i;
+                    i += 2;
+                }
+                else
+                {
+                    item.Order = i;
+                    i++;
+                }
+            }
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(qcustommoveup), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("qcustommovedown")]
+        public object qcustommovedown(int? id, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(qcustommovedown), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestQCustoms.Where(w => w.ID == id).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(qcustommovedown), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            var test = _context.Tests.Where(w => w.ID == model.TestID).FirstOrDefault();
+            if (test != null)
+            {
+                test.Update_On = DateUtil.Now();
+                test.Update_By = update_by;
+            }
+
+            var latestindex = this._context.TestQCustoms.Where(w => w.Order > model.Order & w.TestID == model.TestID).OrderBy(o => o.Order).FirstOrDefault();
+            var i = 1;
+            foreach (var item in this._context.TestQCustoms.Where(w => w.TestID == model.TestID).OrderBy(o => o.Order))
+            {
+                item.Update_On = DateUtil.Now();
+                item.Update_By = update_by;
+                if (latestindex != null && latestindex.ID == item.ID)
+                {
+                    latestindex.Order = i;
+                    i += 2;
+                }
+                else if (latestindex != null && model.ID == item.ID)
+                {
+                    item.Order = i + 1;
+                }
+                else
+                {
+                    item.Order = i;
+                    i++;
+                }
+            }
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(qcustommovedown), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("listtestapprove")]
+        public object listtestapprove(string appr_search, int pageno = 1)
+        {
+            var appr = appr_search.toTestApprovalStatus();
+            var tests = _context.Tests.Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => w.ApprovalStatus == appr);
+            var approvals = _context.TestApprovals.Where(w => tests.Select(s => s.ID).Contains(w.TestID));
+
+            int skipRows = (pageno - 1) * 10;
+            var itemcnt = tests.Count();
+            var pagelen = itemcnt / 10;
+            if (itemcnt % 10 > 0)
+                pagelen += 1;
+            return CreatedAtAction(nameof(listtestapprove), new
+            {
+                data = tests.Select(s => new
+                {
+                    id = s.ID,
+                    name = s.Name,
+                    status = s.Status.toStatusName(),
+                    group = s.Subject.SubjectGroup.Name,
+                    subject = s.Subject.Name,
+                    subjectindex = s.Subject.Order,
+                    testcode = s.TestCode,
+                    approvalstatus = s.ApprovalStatus,
+                    approvalstatusname = s.ApprovalStatus.toTestApprovalStatusName(),
+                    apprid = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? approvals.Where(w => w.TestID == s.ID).FirstOrDefault().ID : 0,
+                    approvalcnt = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? approvals.Where(w => w.TestID == s.ID).FirstOrDefault().ApprovalCnt : 0,
+                    approvedcnt = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? approvals.Where(w => w.TestID == s.ID).FirstOrDefault().ApprovedCnt : 0,
+                    rejectedcnt = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? approvals.Where(w => w.TestID == s.ID).FirstOrDefault().RejectedCnt : 0,
+                    startfrom = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? DateUtil.ToDisplayDate(approvals.Where(w => w.TestID == s.ID).FirstOrDefault().StartFrom) : null,
+                    endfrom = approvals.Where(w => w.TestID == s.ID).FirstOrDefault() != null ? DateUtil.ToDisplayDate(approvals.Where(w => w.TestID == s.ID).FirstOrDefault().EndFrom) : null,
+                    create_on = DateUtil.ToDisplayDateTime(s.Create_On),
+                    create_by = s.Create_By,
+                    update_on = DateUtil.ToDisplayDateTime(s.Update_On),
+                    update_by = s.Update_By,
+                }).OrderBy(o => o.group).ThenBy(o2 => o2.subjectindex).ThenBy(o3 => o3.name).Skip(skipRows).Take(10).ToArray(),
+                pagelen = pagelen,
+                itemcnt = itemcnt,
+            }); ;
+
+        }
+
+        [HttpGet]
+        [Route("listapprstaff")]
+        public object listapprstaff(int? id)
+        {
+            var testappr = _context.TestApprovals.Where(w => w.TestID == id).OrderByDescending(o => o.ID).FirstOrDefault();
+            var staffs = _context.TestApprovalStaffs.Include(i => i.Staff).Where(w => w.TestApprovalID == testappr.ID);
+
+            if (staffs != null)
+                return staffs.Select(s => new
+                {
+                    id = s.ID,
+                    staffid = s.StaffID,
+                    firstname = s.Staff.FirstName,
+                    lastname = s.Staff.LastName,
+                    remark = s.Remark,
+                    approvalstatusname = s.TestApprovalType.toTestApprovalStatusName(),
+                    approvalstatus = s.TestApprovalType,
+                    create_on = DateUtil.ToDisplayDateTime(s.Create_On),
+                    create_by = s.Create_By,
+                    update_on = DateUtil.ToDisplayDateTime(s.Update_On),
+                    update_by = s.Update_By,
+                }).ToArray();
+            return CreatedAtAction(nameof(listapprstaff), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+        }
+
+
+        [HttpGet]
+        [Route("approveconfirm")]
+        public object approveconfirm(int? id, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.Tests.Where(w => w.ID == id).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            model.ApprovalStatus = TestApprovalType.Pending;
+
+            var staffs = _context.Staffs.Where(w => w.isTestAppr);
+            var testappr = new TestApproval();
+            testappr.TestID = model.ID;
+            testappr.ApprovalCnt = staffs.Count();
+            testappr.ApprovedCnt = 0;
+            testappr.StartFrom = DateUtil.Now();
+            testappr.EndFrom = DateUtil.Now().AddMonths(1);
+            testappr.Create_On = DateUtil.Now();
+            testappr.Update_On = DateUtil.Now();
+            testappr.Create_By = update_by;
+            testappr.Update_By = update_by;
+
+            foreach (var staff in staffs)
+            {
+                var appstaff = new TestApprovalStaff();
+                appstaff.StaffID = staff.ID;
+                appstaff.TestApprovalType = TestApprovalType.Pending;
+                appstaff.TestApproval = testappr;
+                appstaff.Create_On = DateUtil.Now();
+                appstaff.Update_On = DateUtil.Now();
+                appstaff.Create_By = update_by;
+                appstaff.Update_By = update_by;
+                _context.TestApprovalStaffs.Add(appstaff);
+            }
+            _context.TestApprovals.Add(testappr);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("approved")]
+        public object approved(int? id, int? staffid, string update_by, string remark)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+
+            var model = _context.TestApprovals.Include(i => i.Test).Where(w => w.TestID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            var appstaff = _context.TestApprovalStaffs.Where(w => w.StaffID == staffid & w.TestApprovalID == model.ID).FirstOrDefault();
+            if (appstaff == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            appstaff.TestApprovalType = TestApprovalType.Approved;
+            appstaff.Remark = remark;
+            appstaff.Update_On = DateUtil.Now();
+            appstaff.Update_By = update_by;
+            _context.SaveChanges();
+
+            var approvedcnt = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == model.ID & w.TestApprovalType == TestApprovalType.Approved).Count();
+            var rejectedcnt = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == model.ID & w.TestApprovalType == TestApprovalType.Reject).Count();
+            model.ApprovedCnt = approvedcnt;
+            model.RejectedCnt = rejectedcnt;
+            model.Update_On = DateUtil.Now();
+            model.Update_By = update_by;
+
+            if (model.ApprovedCnt >= (decimal)model.ApprovalCnt / 2M)
+            {
+                model.Test.Update_On = DateUtil.Now();
+                model.Test.Update_By = update_by;
+                model.Test.ApprovalStatus = TestApprovalType.Approved;
+                model.ApprovalStatus = TestApprovalType.Approved;
+            }
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("rejected")]
+        public object rejected(int? id, int? staffid, string update_by, string remark)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestApprovals.Include(i => i.Test).Where(w => w.TestID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            var appstaff = _context.TestApprovalStaffs.Where(w => w.StaffID == staffid & w.TestApprovalID == model.ID).FirstOrDefault();
+            if (appstaff == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            appstaff.TestApprovalType = TestApprovalType.Reject;
+            appstaff.Remark = remark;
+            appstaff.Update_On = DateUtil.Now();
+            appstaff.Update_By = update_by;
+            _context.SaveChanges();
+
+            var approvedcnt = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == model.ID & w.TestApprovalType == TestApprovalType.Approved).Count();
+            var rejectedcnt = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == model.ID & w.TestApprovalType == TestApprovalType.Reject).Count();
+            model.ApprovedCnt = approvedcnt;
+            model.RejectedCnt = rejectedcnt;
+            model.Update_On = DateUtil.Now();
+            model.Update_By = update_by;
+
+            if (model.RejectedCnt >= (decimal)model.RejectedCnt / 2M)
+            {
+                model.Test.Update_On = DateUtil.Now();
+                model.Test.Update_By = update_by;
+                model.Test.ApprovalStatus = TestApprovalType.Reject;
+                model.ApprovalStatus = TestApprovalType.Reject;
+            }
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("approvedmaster")]
+        public object approvedmaster(int? id, int? staffid, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestApprovals.Include(i => i.Test).Where(w => w.TestID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            model.Test.Update_On = DateUtil.Now();
+            model.Test.Update_By = update_by;
+            model.Test.ApprovalStatus = TestApprovalType.Approved;
+            model.Test.Remark = "อนุมัติโดยผู้คัดเลือกพิเศษ";
+            model.ApprovalStatus = TestApprovalType.Approved;
+
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("rejectedmaster")]
+        public object rejectedmaster(int? id, int? staffid, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestApprovals.Include(i => i.Test).Where(w => w.TestID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            model.Test.Update_On = DateUtil.Now();
+            model.Test.Update_By = update_by;
+            model.Test.ApprovalStatus = TestApprovalType.Reject;
+            model.Test.Remark = "ไม่อนุมัติโดยผู้คัดเลือกพิเศษ";
+            model.ApprovalStatus = TestApprovalType.Reject;
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+        [HttpGet]
+        [Route("draftmaster")]
+        public object draftmaster(int? id, int? staffid, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.TestApprovals.Include(i => i.Test).Where(w => w.TestID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(approved), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            model.Test.Update_On = DateUtil.Now();
+            model.Test.Update_By = update_by;
+            model.Test.ApprovalStatus = TestApprovalType.Draft;
+            model.Test.Remark = "";
+
+            var appstaff = _context.TestApprovalStaffs.Where(w => w.TestApprovalID == model.ID);
+            if (appstaff.Count() > 0)
+                _context.TestApprovalStaffs.RemoveRange(appstaff);
+            _context.TestApprovals.Remove(model);
+
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approveconfirm), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+
+        [HttpGet]
+        [Route("changestatus")]
+        public object changestatus(int? id, string update_by)
+        {
+            if (!id.HasValue)
+                return CreatedAtAction(nameof(changestatus), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var model = _context.Tests.Where(w => w.ID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+            if (model == null)
+                return CreatedAtAction(nameof(changestatus), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+            if (model.Status == StatusType.Active)
+                model.Status = StatusType.InActive;
+            else if (model.Status == StatusType.InActive)
+                model.Status = StatusType.Active;
+
+            model.Update_On = DateUtil.Now();
+            model.Update_By = update_by;
+
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(changestatus), new { result = ResultCode.Success, message = ResultMessage.Success, status = model.Status, statusname = model.Status.toStatusName() });
+        }
+
 
     }
 }

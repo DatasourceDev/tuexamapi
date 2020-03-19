@@ -13,7 +13,7 @@ namespace tuexamapi.Models
         [Key]
         public int ID { get; set; }
 
-        [Display(Name = "รอบสอบ")]
+        [Display(Name = "รอบ")]
         public ExamPeriod ExamPeriod { get; set; }
 
         [Display(Name = "เลือก")]

@@ -12,19 +12,8 @@ namespace tuexamapi.Models
         [Key]
         public int ID { get; set; }
 
-        public int? Index { get; set; }
+        public int? Index { get; set; }     
 
-
-        [Display(Name = "คำตอบแบบข้อความ")]
-        [MaxLength(250)]
-        public string TextAnswer { get; set; }
-
-        [Display(Name = "คำตอบแบบไฟล์")]
-        [MaxLength(250)]
-        public string FileAnswerUrl { get; set; }
-
-        [Display(Name = "คำตอบแบบ Attitude")]
-        public int? AttitudeAnswer { get; set; }
 
         [Required]
         [Display(Name = "แบบทดสอบของผู้เข้าสอบ")]
@@ -33,15 +22,7 @@ namespace tuexamapi.Models
         [Required]
         [Display(Name = "ข้อสอบ")]
         public int QuestionID { get; set; }
-
-        [Display(Name = "คำตอบ")]
-        public int? QuestionAnsID { get; set; }
-
         
-
-
-        [Display(Name = "ตอบคำถามแล้ว")]
-        public bool Answered { get; set; }
         public virtual TestResultStudent TestResultStudent { get; set; }
         public virtual Question Question { get; set; }
         public virtual QuestionAns QuestionAns { get; set; }
@@ -60,8 +41,39 @@ namespace tuexamapi.Models
 
         /* After done on test*/
         [Display(Name = "คะแนนที่ได้")]
-        public int Point { get; set; }
+        public decimal? Point { get; set; }
+        [Display(Name = "ตอบคำถามแล้ว")]
+        public bool Answered { get; set; }
 
+        /* answer*/
+        [Display(Name = "คำตอบแบบข้อความ")]
+        [MaxLength(250)]
+        public string TextAnswer { get; set; }
 
+        [Display(Name = "คำตอบ")]
+        public int? QuestionAnsID { get; set; }
+
+        [Display(Name = "คำตอบแบบ Attitude")]
+        public int? QuestionAnsAttitudeID { get; set; }
+
+        [Display(Name = "คำตอบแบบ ถูกผิด")]
+        public bool? TFAns  { get; set; }
+
+      
+        [Display(Name = "ไฟล์")]
+        [MaxLength(500)]
+        public string FileName { get; set; }
+
+        [Display(Name = "ไฟล์ Url")]
+        [MaxLength(500)]
+        public string FileUrl { get; set; }
+
+        [Display(Name = "ประเภทไฟล์")]
+        [MaxLength(100)]
+        public string FileType { get; set; }
+
+        [Required]
+        [Display(Name = "สถานะการตรวจข้อสอบ")]
+        public ProveStatus ProveStatus { get; set; }
     }
 }

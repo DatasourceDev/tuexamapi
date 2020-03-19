@@ -37,8 +37,6 @@ namespace tuexamapi.Controllers
         public object listAllsub(string text_search, string status_search, string group_search, string subject_search, int pageno = 1)
         {
             var subjectsub = _context.SubjectSubs.Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => 1 == 1);
-            if (!string.IsNullOrEmpty(text_search))
-                subjectsub = subjectsub.Where(w => w.Name.Contains(text_search));
             if (!string.IsNullOrEmpty(status_search))
                 subjectsub = subjectsub.Where(w => w.Status == status_search.toStatus());
 
@@ -54,22 +52,41 @@ namespace tuexamapi.Controllers
                 if (groupID > 0)
                     subjectsub = subjectsub.Where(w => w.Subject.SubjectGroupID == groupID);
             }
+            var subjectsubs = new List<SubjectSub>();
+            if (!string.IsNullOrEmpty(text_search))
+            {
+                var text_splits = text_search.Split(",", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var text_split in text_splits)
+                {
+                    if (!string.IsNullOrEmpty(text_split))
+                    {
+                        var text = text_split.Trim();
+                        subjectsubs.AddRange(subjectsub.Where(w => w.Name.Contains(text)));
+                    }
+                }
+                subjectsubs = subjectsubs.Distinct().ToList();
+            }
+            else
+            {
+                subjectsubs = subjectsub.ToList();
+            }
+
 
             int skipRows = (pageno - 1) * 25;
-            var itemcnt = subjectsub.Count();
+            var itemcnt = subjectsubs.Count();
             var pagelen = itemcnt / 25;
             if (itemcnt % 25 > 0)
                 pagelen += 1;
             return CreatedAtAction(nameof(listAllsub), new
             {
-                data = subjectsub.Select(s => new
+                data = subjectsubs.Select(s => new
                 {
                     id = s.ID,
                     name = s.Name,
                     status = s.Status.toStatusName(),
                     group = s.Subject.SubjectGroup.Name,
                     subject = s.Subject.Name,
-                    subjectindex = s.Subject.Index,
+                    subjectindex = s.Subject.Order,
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -85,7 +102,7 @@ namespace tuexamapi.Controllers
         public object listActivesub(string subject_search)
         {
             var subjectID = NumUtil.ParseInteger(subject_search);
-            var subjectsub = _context.SubjectSubs.Where(w=>w.SubjectID == subjectID).Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => w.Status == StatusType.Active);
+            var subjectsub = _context.SubjectSubs.Where(w => w.SubjectID == subjectID).Include(i => i.Subject).Include(i => i.Subject.SubjectGroup).Where(w => w.Status == StatusType.Active);
             if (subjectsub != null)
                 return subjectsub.Select(s => new
                 {
@@ -93,7 +110,7 @@ namespace tuexamapi.Controllers
                     name = s.Name,
                     status = s.Status.toStatusName(),
                     subject = s.Subject.Name,
-                    subjectindex = s.Subject.Index,
+                    subjectindex = s.Subject.Order,
                     group = s.Subject.SubjectGroup.Name,
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
@@ -109,6 +126,8 @@ namespace tuexamapi.Controllers
         {
             var sub = _context.SubjectSubs.Include(i => i.Subject).Where(w => w.ID == id).Select(s => new
             {
+                result = ResultCode.Success,
+                message = ResultMessage.Success,
                 id = s.ID,
                 name = s.Name,
                 status = s.Status,

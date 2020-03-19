@@ -16,10 +16,6 @@ namespace tuexamapi.Models
         public int? Order { get; set; }
 
         [Required]
-        [Display(Name = "ประเภทข้อสอบ")]
-        public QuestionType QuestionType { get; set; }
-
-        [Required]
         [Display(Name = "แบบทดสอบ")]
         public int TestID { get; set; }
 

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,16 @@ namespace tuexamapi
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtAuthentication:SecurityKey"]));
             var credential = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                options.AllowSynchronousIO = true;
+            });
+
+            // If using IIS:
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.AllowSynchronousIO = true;
+            });
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -75,6 +86,7 @@ namespace tuexamapi
             });
 
             services.Configure<JwtAuthentication>(Configuration.GetSection("JwtAuthentication"));
+            services.Configure<SystemConf>(Configuration.GetSection("SystemConf"));
 
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<TuExamContext>(options => options.UseSqlServer(connectionString));
@@ -107,11 +119,12 @@ namespace tuexamapi
                 context.EnsureSeedData();
             }
             app.UseCors("AllowAll");
-
             app.UseRouting();
 
             app.UseAuthorization();
-           
+
+            app.UseStaticFiles();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
@@ -121,7 +134,17 @@ namespace tuexamapi
         }
 
    }
+    public class SystemConf
+    {
+        public string HostUrl { get; set; }
+        public string SMTP_SERVER { get; set; }
+        public int SMTP_PORT { get; set; }
+        public string SMTP_USERNAME { get; set; }
+        public string SMTP_PASSWORD { get; set; }
+        public bool STMP_SSL { get; set; }
+        public string SMTP_FROM { get; set; }
 
+    }
     public class JwtAuthentication
     {
         public string SecurityKey { get; set; }

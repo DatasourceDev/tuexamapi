@@ -35,6 +35,9 @@ namespace tuexamapi.Models
         [Display(Name = "รอบสอบ")]
         public int ExamID { get; set; }
 
+        [Display(Name = "ช่องทางลงทะเบียน")]
+        public ExamRegisterType ExamRegisterType { get; set; }
+
         public virtual Student Student { get; set; }
         public virtual Exam Exam { get; set; }
 
@@ -55,6 +58,9 @@ namespace tuexamapi.Models
 
         [Display(Name = "เวลาที่เริ่มทำแบบทดสอบ")]
         public Nullable<DateTime> Start_On { get; set; }
+
+        [Display(Name = "หมดเวลาแบบทดสอบ")]
+        public Nullable<DateTime> Expriry_On { get; set; }
 
         [Display(Name = "เวลาที่สิ้นสุดแบบทดสอบ")]
         public Nullable<DateTime> End_On { get; set; }

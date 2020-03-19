@@ -32,8 +32,6 @@ namespace tuexamapi.Models
         [Display(Name = "คำถามคำตอบของผู้เข้าสอบ")]
         public int TestResultStudentQAnsID { get; set; }
         
-        public virtual QuestionChild QuestionChild { get; set; }
-        public virtual QuestionAnsChild QuestionAnsChild { get; set; }
         public virtual TestResultStudentQAns TestResultStudentQAns { get; set; }
         
         [Display(Name = "ผู้สร้าง")]

@@ -23,7 +23,7 @@ namespace tuexamapi.Models
         public StatusType Status { get; set; }
 
         [Display(Name = "ลำดับการทำข้อสอบ")]
-        public int? Index { get; set; }
+        public int? Order { get; set; }
 
         [Required]
 

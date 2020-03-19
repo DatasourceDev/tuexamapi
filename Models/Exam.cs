@@ -48,6 +48,8 @@ namespace tuexamapi.Models
         [Display(Name = "แบบทดสอบ")]
         public int? TestID { get; set; }
 
+        
+
         [Required]
         public virtual SubjectGroup SubjectGroup { get; set; }
         public virtual Subject Subject { get; set; }

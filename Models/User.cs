@@ -25,6 +25,7 @@ namespace tuexamapi.Models
         [MaxLength(250)]
         public string ConfirmPassword { get; set; }
 
+        public bool isAdmin { get; set; }
 
         [Display(Name = "ผู้สร้าง")]
         [MaxLength(250)]

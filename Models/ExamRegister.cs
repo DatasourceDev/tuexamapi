@@ -21,6 +21,7 @@ namespace tuexamapi.Models
         [Display(Name = "ผู้เข้าสอบ")]
         public int StudentID { get; set; }
 
+        [Display(Name = "ช่องทางลงทะเบียน")]
         public ExamRegisterType ExamRegisterType { get; set; }
 
 

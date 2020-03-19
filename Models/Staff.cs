@@ -44,6 +44,10 @@ namespace tuexamapi.Models
         [MaxLength(50)]
         public string Phone { get; set; }
 
+        [Display(Name = "โทรศัพท์ 2")]
+        [MaxLength(50)]
+        public string Phone2 { get; set; }
+
         [Display(Name = "พาสปอร์ต")]
         [MaxLength(50)]
         public string Passport { get; set; }
@@ -61,6 +65,24 @@ namespace tuexamapi.Models
         [Display(Name = "ผู้ใช้งาน")]
         public int UserID { get; set; }
 
+        
+        [Display(Name = "เจ้าหน้าที่ทั่วไป(Administrator)")]
+        public bool isAdmin { get; set; }
+
+        [Display(Name = "เจ้าหน้าที่พิเศษ (Master Administrator)")]
+        public bool isMasterAdmin { get; set; }
+
+        [Display(Name = "ผู้กลั่นกรองข้อสอบ (Question Approval)")]
+        public bool isQuestionAppr { get; set; }
+
+        [Display(Name = "ผู้กลั่นกรองข้อสอบพิเศษ (Master Question Approval)")]
+        public bool isMasterQuestionAppr { get; set; }
+
+        [Display(Name = "ผู้คัดเลือกแบบทดสอบ (Test Approval)")]
+        public bool isTestAppr { get; set; }
+
+        [Display(Name = "ผู้คัดเลือกแบบทดสอบพิเศษ (Master Approval)")]
+        public bool isMasterTestAppr { get; set; }
 
         [Display(Name = "ผู้สร้าง")]
         [MaxLength(250)]

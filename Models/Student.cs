@@ -62,8 +62,7 @@ namespace tuexamapi.Models
         public string Address { get; set; }
 
         [Display(Name = "คณะ")]
-        [MaxLength(250)]
-        public string Faculty { get; set; }
+        public int? FacultyID { get; set; }
 
         [Display(Name = "หลักสูตร")]
         public Course Course { get; set; }
@@ -80,7 +79,7 @@ namespace tuexamapi.Models
         public string Update_By { get; set; }
         [Display(Name = "เวลาแก้ไข")]
         public Nullable<DateTime> Update_On { get; set; }
-
+        public Faculty Faculty { get; set; }
         public User User { get; set; }
 
     }

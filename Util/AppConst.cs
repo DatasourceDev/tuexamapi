@@ -8,7 +8,12 @@ namespace tuexamapi.Models
     public class AppConst
     {
     }
-
+    public enum SubjectType
+    {
+        Type1 = 1,
+        Type2 ,
+        Type3,
+    }
     public enum StatusType
     {
         InActive = 0,
@@ -23,13 +28,21 @@ namespace tuexamapi.Models
     public enum QuestionType
     {
         MultipleChoice = 1,
-        TrueFalse,
-        MultipleMatching,
-        ShortAnswer,
-        Essay,
-        Assignment,
-        ReadingTextAndMultipleChoice,
-        Attitude
+        TrueFalse =2,
+        MultipleMatching =3,
+        ShortAnswer =4,
+        Essay =5,
+        Assignment =6,
+        ReadingText = 7,
+        Attitude = 8,
+        ReadingMultipleChoice =9,
+        ReadingTrueFalse =10,
+        ReadingMultipleMatching = 11,
+        ReadingShortAnswer =12,
+        ReadingEssay =13,
+        ReadingAssignment =14,
+        ReadingAttitude =15,
+        MultipleMatchingSub =16,
     }
 
     public enum Course
@@ -123,13 +136,18 @@ namespace tuexamapi.Models
 
     public enum AttitudeAnsType
     {
+        Type2 = 2,
         Type3,
         Type4,
         Type5,
         Type6,
         Type7,
     }
-
+    public enum AttitudeAnsSubType
+    {
+        Sub1 = 1,
+        Sub2,
+    }
     public enum ProveStatus
     {
         Pending,
@@ -144,6 +162,8 @@ namespace tuexamapi.Models
         DuplicateData = -102,
         InvalidInput = -103,
         DataInUse = -104,
+        InactiveAccount = -105,
+        WrongAccountorPassword = -106,
     }
 
     public static class ResultMessage
@@ -154,12 +174,21 @@ namespace tuexamapi.Models
         public static string DuplicateData = "ข้อมูลซ้ำในระบบ";
         public static string InvalidInput = "ระบุข้อมูลไม่ถูกต้อง";
         public static string DataInUse = "ไม่สามารถลบข้อมูลได้ เนื่องจากรายการนี้ได้ถูกนำไปใช้งานแล้ว";
+        public static string InactiveAccount = "ผู้ใช้นี้ถูกระงับการใช้งาน";
+        public static string WrongAccountorPassword = "รหัสผู้ใช้หรือรหัสผ่านผิดพลาด";
     }
 
     public enum ExamingStatus
     {
         None,
         Examing,
+        Absent,
         Done,
+    }
+
+    public enum AuthType
+    {
+        Login,
+        Logout
     }
 }

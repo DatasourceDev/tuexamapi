@@ -26,6 +26,9 @@ namespace tuexamapi.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int>("AttitudeAnsSubType")
+                        .HasColumnType("int");
+
                     b.Property<int>("AttitudeAnsType")
                         .HasColumnType("int");
 
@@ -36,7 +39,29 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("Point")
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<decimal?>("Point1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point4")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point5")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point6")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point7")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Text1")
@@ -64,6 +89,34 @@ namespace tuexamapi.Migrations
                         .HasMaxLength(250);
 
                     b.Property<string>("Text7")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn1")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn2")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn3")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn4")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn5")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn6")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<string>("TextEn7")
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
 
@@ -223,6 +276,165 @@ namespace tuexamapi.Migrations
                     b.ToTable("ExamSetups");
                 });
 
+            modelBuilder.Entity("tuexamapi.Models.Faculty", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("FacultyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Facultys");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.ImageFile", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("ImageFiles");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.LoginStaffHistory", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("AuthType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NumberOfLogin")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StaffID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("StaffID");
+
+                    b.ToTable("LoginStaffHistorys");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.LoginStudentHistory", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("AuthType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NumberOfLogin")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("StudentID");
+
+                    b.ToTable("LoginStudentHistorys");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.LoginToken", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StudentID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Token")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("LoginTokens");
+                });
+
             modelBuilder.Entity("tuexamapi.Models.Question", b =>
                 {
                     b.Property<int>("ID")
@@ -233,8 +445,17 @@ namespace tuexamapi.Migrations
                     b.Property<int>("ApprovalStatus")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AttitudeAnsSubType")
+                        .HasColumnType("int");
+
                     b.Property<int?>("AttitudeAnsType")
                         .HasColumnType("int");
+
+                    b.Property<int?>("ChildOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Choice")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("CourseEn")
                         .HasColumnType("bit");
@@ -249,6 +470,17 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("FPoint")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(100)")
+                        .HasMaxLength(100);
+
                     b.Property<string>("FileUrl")
                         .HasColumnType("nvarchar(500)")
                         .HasMaxLength(500);
@@ -256,6 +488,33 @@ namespace tuexamapi.Migrations
                     b.Property<string>("Keyword")
                         .HasColumnType("nvarchar(500)")
                         .HasMaxLength(500);
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Point")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point4")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point5")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point6")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Point7")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("QuestionCode")
                         .HasColumnType("nvarchar(250)")
@@ -266,6 +525,9 @@ namespace tuexamapi.Migrations
                         .HasMaxLength(1000);
 
                     b.Property<int>("QuestionLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuestionParentID")
                         .HasColumnType("int");
 
                     b.Property<string>("QuestionTh")
@@ -291,6 +553,9 @@ namespace tuexamapi.Migrations
                     b.Property<int>("SubjectSubID")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("TPoint")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int?>("TimeLimit")
                         .HasColumnType("int");
 
@@ -305,6 +570,8 @@ namespace tuexamapi.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("QuestionParentID");
 
                     b.HasIndex("SubjectGroupID");
 
@@ -372,16 +639,21 @@ namespace tuexamapi.Migrations
                     b.ToTable("QuestionAnies");
                 });
 
-            modelBuilder.Entity("tuexamapi.Models.QuestionAnsChild", b =>
+            modelBuilder.Entity("tuexamapi.Models.QuestionApproval", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("Choice")
-                        .HasColumnType("nvarchar(500)")
-                        .HasMaxLength(500);
+                    b.Property<int>("ApprovalCnt")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ApprovedCnt")
+                        .HasColumnType("int");
 
                     b.Property<string>("Create_By")
                         .HasColumnType("nvarchar(250)")
@@ -390,73 +662,17 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("FileUrl")
-                        .HasColumnType("nvarchar(500)")
-                        .HasMaxLength(500);
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Point")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("QuestionChildID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("QuestionEn")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("QuestionTh")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("Update_By")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
-
-                    b.Property<DateTime?>("Update_On")
+                    b.Property<DateTime>("EndFrom")
                         .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("QuestionChildID");
-
-                    b.ToTable("QuestionAnsChilds");
-                });
-
-            modelBuilder.Entity("tuexamapi.Models.QuestionChild", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Create_By")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
-
-                    b.Property<DateTime?>("Create_On")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FileUrl")
-                        .HasColumnType("nvarchar(500)")
-                        .HasMaxLength(500);
-
-                    b.Property<string>("QuestionEn")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
 
                     b.Property<int>("QuestionID")
                         .HasColumnType("int");
 
-                    b.Property<string>("QuestionTh")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                    b.Property<int>("RejectedCnt")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartFrom")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Update_By")
                         .HasColumnType("nvarchar(250)")
@@ -469,7 +685,50 @@ namespace tuexamapi.Migrations
 
                     b.HasIndex("QuestionID");
 
-                    b.ToTable("QuestionChilds");
+                    b.ToTable("QuestionApprovals");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.QuestionApprovalStaff", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("QuestionApprovalID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionApprovalType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remark")
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<int>("StaffID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("QuestionApprovalID");
+
+                    b.HasIndex("StaffID");
+
+                    b.ToTable("QuestionApprovalStaffs");
                 });
 
             modelBuilder.Entity("tuexamapi.Models.SendResultSetup", b =>
@@ -569,6 +828,10 @@ namespace tuexamapi.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
 
+                    b.Property<string>("Phone2")
+                        .HasColumnType("nvarchar(50)")
+                        .HasMaxLength(50);
+
                     b.Property<int>("Prefix")
                         .HasColumnType("int");
 
@@ -588,6 +851,24 @@ namespace tuexamapi.Migrations
 
                     b.Property<int>("UserID")
                         .HasColumnType("int");
+
+                    b.Property<bool>("isAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("isMasterAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("isMasterQuestionAppr")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("isMasterTestAppr")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("isQuestionAppr")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("isTestAppr")
+                        .HasColumnType("bit");
 
                     b.HasKey("ID");
 
@@ -641,9 +922,8 @@ namespace tuexamapi.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasMaxLength(100);
 
-                    b.Property<string>("Faculty")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
+                    b.Property<int?>("FacultyID")
+                        .HasColumnType("int");
 
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(250)")
@@ -696,6 +976,8 @@ namespace tuexamapi.Migrations
 
                     b.HasKey("ID");
 
+                    b.HasIndex("FacultyID");
+
                     b.HasIndex("UserID");
 
                     b.ToTable("Students");
@@ -715,13 +997,13 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("Index")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
+
+                    b.Property<int?>("Order")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -765,6 +1047,9 @@ namespace tuexamapi.Migrations
 
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("DoExamOrder")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -908,6 +1193,98 @@ namespace tuexamapi.Migrations
                     b.ToTable("Tests");
                 });
 
+            modelBuilder.Entity("tuexamapi.Models.TestApproval", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("ApprovalCnt")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ApprovedCnt")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EndFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RejectedCnt")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TestID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("TestID");
+
+                    b.ToTable("TestApprovals");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.TestApprovalStaff", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Remark")
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<int>("StaffID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TestApprovalID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TestApprovalType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("StaffID");
+
+                    b.HasIndex("TestApprovalID");
+
+                    b.ToTable("TestApprovalStaffs");
+                });
+
             modelBuilder.Entity("tuexamapi.Models.TestQCustom", b =>
                 {
                     b.Property<int>("ID")
@@ -926,9 +1303,6 @@ namespace tuexamapi.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("QuestionID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionType")
                         .HasColumnType("int");
 
                     b.Property<int>("TestID")
@@ -1073,8 +1447,14 @@ namespace tuexamapi.Migrations
                     b.Property<int>("ExamID")
                         .HasColumnType("int");
 
+                    b.Property<int>("ExamRegisterType")
+                        .HasColumnType("int");
+
                     b.Property<int>("ExamingStatus")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("Expriry_On")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("Other")
                         .HasColumnType("bit");
@@ -1142,9 +1522,6 @@ namespace tuexamapi.Migrations
                     b.Property<bool>("Answered")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("AttitudeAnswer")
-                        .HasColumnType("int");
-
                     b.Property<string>("Create_By")
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
@@ -1152,14 +1529,28 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileAnswerUrl")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(100)")
+                        .HasMaxLength(100);
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
 
                     b.Property<int?>("Index")
                         .HasColumnType("int");
 
-                    b.Property<int>("Point")
+                    b.Property<decimal?>("Point")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProveStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuestionAnsAttitudeID")
                         .HasColumnType("int");
 
                     b.Property<int?>("QuestionAnsID")
@@ -1167,6 +1558,9 @@ namespace tuexamapi.Migrations
 
                     b.Property<int>("QuestionID")
                         .HasColumnType("int");
+
+                    b.Property<bool?>("TFAns")
+                        .HasColumnType("bit");
 
                     b.Property<int>("TestResultStudentID")
                         .HasColumnType("int");
@@ -1233,10 +1627,6 @@ namespace tuexamapi.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("QuestionAnsChildID");
-
-                    b.HasIndex("QuestionChildID");
-
                     b.HasIndex("TestResultStudentQAnsID");
 
                     b.ToTable("TestResultStudentQAnsChilds");
@@ -1271,6 +1661,9 @@ namespace tuexamapi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
+
+                    b.Property<bool>("isAdmin")
+                        .HasColumnType("bit");
 
                     b.HasKey("ID");
 
@@ -1327,8 +1720,31 @@ namespace tuexamapi.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("tuexamapi.Models.LoginStaffHistory", b =>
+                {
+                    b.HasOne("tuexamapi.Models.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.LoginStudentHistory", b =>
+                {
+                    b.HasOne("tuexamapi.Models.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("tuexamapi.Models.Question", b =>
                 {
+                    b.HasOne("tuexamapi.Models.Question", "QuestionParent")
+                        .WithMany()
+                        .HasForeignKey("QuestionParentID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("tuexamapi.Models.SubjectGroup", "SubjectGroup")
                         .WithMany()
                         .HasForeignKey("SubjectGroupID")
@@ -1357,20 +1773,26 @@ namespace tuexamapi.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("tuexamapi.Models.QuestionAnsChild", b =>
-                {
-                    b.HasOne("tuexamapi.Models.QuestionChild", "QuestionChild")
-                        .WithMany()
-                        .HasForeignKey("QuestionChildID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("tuexamapi.Models.QuestionChild", b =>
+            modelBuilder.Entity("tuexamapi.Models.QuestionApproval", b =>
                 {
                     b.HasOne("tuexamapi.Models.Question", "Question")
                         .WithMany()
                         .HasForeignKey("QuestionID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.QuestionApprovalStaff", b =>
+                {
+                    b.HasOne("tuexamapi.Models.QuestionApproval", "QuestionApproval")
+                        .WithMany()
+                        .HasForeignKey("QuestionApprovalID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("tuexamapi.Models.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -1410,6 +1832,11 @@ namespace tuexamapi.Migrations
 
             modelBuilder.Entity("tuexamapi.Models.Student", b =>
                 {
+                    b.HasOne("tuexamapi.Models.Faculty", "Faculty")
+                        .WithMany()
+                        .HasForeignKey("FacultyID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("tuexamapi.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
@@ -1446,6 +1873,30 @@ namespace tuexamapi.Migrations
                     b.HasOne("tuexamapi.Models.Subject", "Subject")
                         .WithMany()
                         .HasForeignKey("SubjectID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.TestApproval", b =>
+                {
+                    b.HasOne("tuexamapi.Models.Test", "Test")
+                        .WithMany()
+                        .HasForeignKey("TestID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.TestApprovalStaff", b =>
+                {
+                    b.HasOne("tuexamapi.Models.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("tuexamapi.Models.TestApproval", "TestApproval")
+                        .WithMany()
+                        .HasForeignKey("TestApprovalID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -1531,18 +1982,6 @@ namespace tuexamapi.Migrations
 
             modelBuilder.Entity("tuexamapi.Models.TestResultStudentQAnsChild", b =>
                 {
-                    b.HasOne("tuexamapi.Models.QuestionAnsChild", "QuestionAnsChild")
-                        .WithMany()
-                        .HasForeignKey("QuestionAnsChildID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("tuexamapi.Models.QuestionChild", "QuestionChild")
-                        .WithMany()
-                        .HasForeignKey("QuestionChildID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("tuexamapi.Models.TestResultStudentQAns", "TestResultStudentQAns")
                         .WithMany()
                         .HasForeignKey("TestResultStudentQAnsID")

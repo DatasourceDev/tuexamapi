@@ -12,6 +12,7 @@ namespace tuexamapi.DTO
         public string idcard { get; set; }
         public string email{ get; set; }
         public string phone { get; set; }
+        public string phone2 { get; set; }
         public string opendate { get; set; }
         public string expirydate { get; set; }
         
@@ -24,11 +25,18 @@ namespace tuexamapi.DTO
         public string lastname { get; set; }
         public string firstnameen { get; set; }
         public string lastnameen { get; set; }
-        public string updateby { get; set; }
+        public string update_by { get; set; }
         public string status { get; set; }
-        public string faculty { get; set; }
+        public int? faculty { get; set; }
         public string course { get; set; }
         public string studentcode { get; set; }
         
+        public bool? isadmin { get; set; }
+        public bool? ismasteradmin { get; set; }
+        public bool? isquestionappr { get; set; }
+        public bool? ismasterquestionappr { get; set; }
+        public bool? istestappr { get; set; }
+        public bool? ismastertestappr { get; set; }
+
     }
 }

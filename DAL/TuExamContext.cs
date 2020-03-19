@@ -36,15 +36,23 @@ namespace tuexamapi.DAL
 
         public DbSet<Question> Questions { get; set; }
         public DbSet<QuestionAns> QuestionAnies { get; set; }
-        public DbSet<QuestionAnsChild> QuestionAnsChilds { get; set; }
-        public DbSet<QuestionChild> QuestionChilds { get; set; }
         public DbSet<SendResultSetup> SendResultSetups { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
         public DbSet<TestResultStudent> TestResultStudents { get; set; }
         public DbSet<TestResultStudentQAns> TestResultStudentQAnies { get; set; }
         public DbSet<TestResultStudentQAnsChild> TestResultStudentQAnsChilds { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<LoginStudentHistory> LoginStudentHistorys { get; set; }
+        public DbSet<LoginStaffHistory> LoginStaffHistorys { get; set; }
+        public DbSet<LoginToken> LoginTokens { get; set; }
+        public DbSet<Faculty> Facultys { get; set; }
+        public DbSet<TestApproval> TestApprovals { get; set; }
+        public DbSet<TestApprovalStaff> TestApprovalStaffs { get; set; }
 
+        public DbSet<QuestionApproval> QuestionApprovals { get; set; }
+        public DbSet<QuestionApprovalStaff> QuestionApprovalStaffs { get; set; }
+        public DbSet<ImageFile> ImageFiles { get; set; }
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
