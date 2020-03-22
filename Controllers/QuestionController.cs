@@ -914,6 +914,7 @@ namespace tuexamapi.Controllers
             public int id { get; set; }
             public string no { get; set; }
             public string subjectname { get; set; }
+            public string subjectsub { get; set; }
             public string questiontype { get; set; }
             public string questionth { get; set; }
             public string attanstype { get; set; }
@@ -1393,7 +1394,6 @@ namespace tuexamapi.Controllers
             }
             return CreatedAtAction(nameof(uploadword), new { result = ResultCode.InvalidInput, message = ResultMessage.InvalidInput });
         }
-
         public object uploadexcel(byte[] file, string update_by)
         {
             var questions = new List<question_import>();
@@ -1535,13 +1535,23 @@ namespace tuexamapi.Controllers
                 if (subject == null)
                     return CreatedAtAction(nameof(upload), new { result = ResultCode.DataHasNotFound, message = "ไม่พบข้อมูลวิชา " + q.subjectname });
 
-                var sub = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).FirstOrDefault();
-                if (sub == null)
-                    return CreatedAtAction(nameof(upload), new { result = ResultCode.DataHasNotFound, message = "ไม่พบข้อมูลวิชาย่อย" });
+                if (!string.IsNullOrEmpty(q.subjectsub))
+                {
+                    var sub = _context.SubjectSubs.Where(w => w.Name == q.subjectsub).FirstOrDefault();
+                    if (sub == null)
+                        return CreatedAtAction(nameof(upload), new { result = ResultCode.DataHasNotFound, message = "ไม่พบข้อมูลวิชาย่อย" });
+                    question.SubjectSubID = sub.ID;
+                }
+                else
+                {
+                    var sub = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).FirstOrDefault();
+                    if (sub == null)
+                        return CreatedAtAction(nameof(upload), new { result = ResultCode.DataHasNotFound, message = "ไม่พบข้อมูลวิชาย่อย" });
+                    question.SubjectSubID = sub.ID;
+                }
 
                 question.SubjectGroupID = subject.SubjectGroupID;
                 question.SubjectID = subject.ID;
-                question.SubjectSubID = sub.ID;
                 //.Remark = no;
                 if (q.questiontype.toQuestionType() == QuestionType.Attitude | q.questiontype.toQuestionType() == QuestionType.ReadingAttitude)
                 {
@@ -2109,6 +2119,74 @@ namespace tuexamapi.Controllers
             }
             return msg.ToString();
         }
+
+        #region temp
+        
+        [HttpPost, DisableRequestSizeLimit]
+        [Route("uploadgtemp")]
+        public object uploadgtemp([FromBody] JsonElement json)
+        {
+            var model = JsonConvert.DeserializeObject<ImportExamRegisterDTO>(json.GetRawText());
+            if (model != null && model.fileupload != null)
+            {
+                var file = Convert.FromBase64String(model.fileupload.value);
+                var questions = new List<question_import>();
+                using (MemoryStream ms = new MemoryStream(file))
+                {
+                    using (ExcelPackage package = new ExcelPackage(ms))
+                    {
+                        if (package.Workbook.Worksheets.Count == 0)
+                        {
+                            return CreatedAtAction(nameof(upload), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+                        }
+                        else
+                        {
+                            var worksheet = package.Workbook.Worksheets.First();
+                            int totalRows = worksheet.Dimension.End.Row;
+                            int totalCols = worksheet.Dimension.End.Column ;
+                            
+                            for (int i = 1; i <= totalCols; i++)
+                            {
+                                var j = 1;
+                                var questionth = worksheet.Cells[j, i].Text; j++;
+                                var row1 = worksheet.Cells[j, i].Text; j++;
+                                var row2 = worksheet.Cells[j, i].Text; j++;
+                                var row3 = worksheet.Cells[j, i].Text; j++;
+                                var question = new question_import();
+                                question.questionth = questionth;
+                                question.questiontype = "AT";
+                                question.update_by = model.update_by;
+                                question.subjectname = "G";
+                                if(i>=1 & i<=10)
+                                    question.subjectsub = "H";
+                                else if (i>10 & i<=20)
+                                    question.subjectsub = "Z";
+                                else if (i > 20 & i <= 30)
+                                    question.subjectsub = "Y";
+                                else if (i > 30 & i <= 40)
+                                    question.subjectsub = "C";
+                                else if (i > 40 & i <= 50)
+                                    question.subjectsub = "T";
+
+                                question.no = (i).ToString();
+                                question.subattanstype = (3).ToString();
+                                question.point1 = row1;
+                                question.point2 = row2;
+                                question.point3= row3;
+                                questions.Add(question);
+                            }
+                            return savequestion(questions);
+
+                        }
+                    }
+                }
+            }
+               
+
+            return CreatedAtAction(nameof(upload), new { result = ResultCode.InvalidInput, message = ResultMessage.InvalidInput });
+
+        }
+        #endregion
 
     }
 

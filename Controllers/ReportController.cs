@@ -707,7 +707,7 @@ namespace tuexamapi.Controllers
 
         [HttpGet]
         [Route("questionanalyze")]
-        public object questionanalyze(string text_search, string status_search, string group_search, string subject_search, string sub_search, string level_search,string course_search, int pageno = 1)
+        public object questionanalyze(string text_search, string status_search, string group_search, string subject_search, string sub_search, string level_search, string course_search, int pageno = 1)
         {
             var lists = Rpt.questionanalyze(_context, text_search, status_search, group_search, subject_search, sub_search, level_search, course_search);
 
@@ -1867,7 +1867,7 @@ namespace tuexamapi.Controllers
             if (tsresult == null)
                 return;
 
-            var student = _context.Students.Include(i=>i.Faculty).Where(w => w.ID == tsresult.StudentID).FirstOrDefault();
+            var student = _context.Students.Include(i => i.Faculty).Where(w => w.ID == tsresult.StudentID).FirstOrDefault();
             if (student == null)
                 return;
 
@@ -1875,7 +1875,7 @@ namespace tuexamapi.Controllers
 
             this.HttpContext.Response.ContentType = "application/pdf";
 
-            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), 0f, 0f, 40f, 40f);
+            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), -80f, -80f, 10f, 10f);
             var htmlparser = new HTMLWorker(pdfDoc);
             var writer = PdfWriter.GetInstance(pdfDoc, this.HttpContext.Response.Body);
 
@@ -1887,100 +1887,116 @@ namespace tuexamapi.Controllers
             var pageSize = pdfDoc.PageSize;
             var THSarabunNew = BaseFont.CreateFont(webRootPath + @"\fonts\THSarabunNew.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             Font font = new Font(THSarabunNew, 14);
+            Font fontsmall = new Font(THSarabunNew, 10);
+            Font fontbig = new Font(THSarabunNew, 16);
+            Font fontHeader = new Font(THSarabunNew, 35, Font.BOLD);
+            Font fontbold = new Font(THSarabunNew, 16, Font.BOLD);
+
             pdfDoc.Open();
 
-            PdfPTable table = new PdfPTable(6);
-            var cell = new PdfPCell(new Phrase(12, student.Prefix.toPrefixName(), font));
-            cell.Padding = 5;
+            PdfPTable table = new PdfPTable(3);
+
+            // Header row
+            PdfPTable tableheader = new PdfPTable(8);
+            var totalwidth = pdfDoc.PageSize.Width;
+            tableheader.SetWidthPercentage(new float[] {
+                (float)(0.15 * totalwidth) ,
+                (float)(0.2 * totalwidth) ,
+                (float)(0.07 * totalwidth) ,
+                (float)(0.23 * totalwidth) ,
+                (float)(0.05 * totalwidth) ,
+                (float)(0.3 * totalwidth) ,
+                (float)(0.1 * totalwidth) ,
+                (float)(0.1 * totalwidth)
+            }, pdfDoc.PageSize);
+            var cell = new PdfPCell(new Phrase(12, "เลขทะเบียนนักศึกษา:", fontbig));
+            cell.PaddingBottom = 7;
             cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, student.FirstName + " " + student.LastName, font));
-            cell.Padding = 5;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, student.StudentCode, fontbig));
+            cell.PaddingBottom = 7;
             cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "", font));
-            cell.Padding = 5;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, "ชื่อ-สกุล:", fontbig));
+            cell.PaddingBottom = 7;
             cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "", font));
-            cell.Padding = 5;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, student.Prefix.toPrefixName() + student.FirstName + " " + student.LastName, fontbig));
+            cell.PaddingBottom = 7;
             cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "รหัส", font));
-            cell.Padding = 5;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, "คณะ:", fontbig));
+            cell.PaddingBottom = 7;
             cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, student.StudentCode, font));
-            cell.Padding = 5;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, student.Faculty.FacultyName, fontbig));
+            cell.PaddingBottom = 7;
+            cell.Border = 0;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, "Pre-Test", fontsmall));
+            cell.PaddingBottom = 7;
+            cell.Border = 0;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayDateTime(tsresult.Start_On), fontsmall));
+            cell.PaddingBottom = 7;
+            cell.HorizontalAlignment = Element.ALIGN_RIGHT;
+            cell.Border = 0;
+            tableheader.AddCell(cell);
+
+            cell = new PdfPCell(tableheader);
+            cell.Colspan = 3;
             cell.Border = 0;
             table.AddCell(cell);
 
-            cell = new PdfPCell(new Phrase(12, "คณะ ", font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, student.Faculty.FacultyName, font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "", font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "", font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "หลักสูตร", font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, student.Course.toCourseName(), font));
-            cell.Padding = 5;
-            cell.Border = 0;
-            table.AddCell(cell);
 
-            cell = new PdfPCell(new Phrase(12, "กลุ่มวิชา", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "วิชา", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "วันที่สอบ", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "เวลา", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "คะแนน", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, "ชื่อแบบทดสอบ", font));
-            cell.Padding = 5;
-            table.AddCell(cell);
+            // second row
+            var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
+            foreach (var subject in subjects)
+            {
+                var subg = _context.SubjectSubs.Where(w => w.Subject.Name == subject.Name);
 
-            cell = new PdfPCell(new Phrase(12, tsresult.Exam.SubjectGroup.Name, font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, tsresult.Exam.Subject.Name, font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayDate(tsresult.Exam.ExamDate), font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayTime(tsresult.Start_On), font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, tsresult.Point.ToString(), font));
-            cell.Padding = 5;
-            table.AddCell(cell);
-            cell = new PdfPCell(new Phrase(12, tsresult.Test.Name, font));
-            cell.Padding = 5;
-            table.AddCell(cell);
+                PdfPTable tableg = new PdfPTable(subg.Count()+1);
+                cell = new PdfPCell(new Phrase(0, subject.Name, fontHeader));
+                cell.Padding = 5;
+                cell.Rowspan = 2;
+                cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                cell.UseAscender = true;
+                tableg.AddCell(cell);
 
+                foreach (var sub in subg)
+                {
+                    cell = new PdfPCell(new Phrase(0, sub.Name, fontbold));
+                    cell.Padding = 5;
+                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                    tableg.AddCell(cell);
+                }
+                foreach (var sub in subg)
+                {
+                    cell = new PdfPCell(new Phrase(0, sub.Name, fontbold));
+                    cell.Padding = 5;
+                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                    tableg.AddCell(cell);
+                }
 
+                cell = new PdfPCell(new Phrase(0, "คำอธิบาย", font));
+                cell.Padding = 5;
+                cell.Colspan = 6;
+                cell.FixedHeight = 220f;
+                tableg.AddCell(cell);
+                cell = new PdfPCell(tableg);
+                table.AddCell(cell);
+            }
             pdfDoc.Add(table);
-
             pdfDoc.Close();
 
             return;
@@ -2092,14 +2108,14 @@ namespace tuexamapi.Controllers
 
             PdfPTable table = new PdfPTable(7);
             var totalwidth = pdfDoc.PageSize.Width - 80f;
-            table.SetWidthPercentage(new float[] { 
+            table.SetWidthPercentage(new float[] {
                 (float)(0.4 * totalwidth) ,
-                (float)(0.1 * totalwidth) , 
-                (float)(0.1 * totalwidth) , 
-                (float)(0.1 * totalwidth) , 
                 (float)(0.1 * totalwidth) ,
-                (float)(0.1 * totalwidth) , 
-                (float)(0.1 * totalwidth) 
+                (float)(0.1 * totalwidth) ,
+                (float)(0.1 * totalwidth) ,
+                (float)(0.1 * totalwidth) ,
+                (float)(0.1 * totalwidth) ,
+                (float)(0.1 * totalwidth)
             }, pdfDoc.PageSize);
             var cell = new PdfPCell(new Phrase(12, "ประเภทข้อสอบ", font));
             cell.Padding = 5;
@@ -2146,7 +2162,7 @@ namespace tuexamapi.Controllers
                 cell.Padding = 5;
                 table.AddCell(cell);
             }
-            
+
             pdfDoc.Add(table);
 
             pdfDoc.Close();

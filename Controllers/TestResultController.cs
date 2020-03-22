@@ -1021,33 +1021,26 @@ namespace tuexamapi.Controllers
                     {
                         if (tanswer.QuestionAnsAttitudeID.HasValue)
                         {
-                            var attsetup = _context.AttitudeSetups.Where(w => w.AttitudeAnsType == question.AttitudeAnsType & w.AttitudeAnsSubType == question.AttitudeAnsSubType).FirstOrDefault();
-                            if (attsetup != null)
-                            {
-                                if (tanswer.QuestionAnsAttitudeID.HasValue)
-                                {
-                                    decimal attpoint = 0;
-                                    if (tanswer.QuestionAnsAttitudeID == 1)
-                                        attpoint = attsetup.Point1.HasValue ? attsetup.Point1.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 2)
-                                        attpoint = attsetup.Point2.HasValue ? attsetup.Point2.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 3)
-                                        attpoint = attsetup.Point3.HasValue ? attsetup.Point3.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 4)
-                                        attpoint = attsetup.Point4.HasValue ? attsetup.Point4.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 5)
-                                        attpoint = attsetup.Point5.HasValue ? attsetup.Point5.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 6)
-                                        attpoint = attsetup.Point6.HasValue ? attsetup.Point6.Value : 0;
-                                    else if (tanswer.QuestionAnsAttitudeID == 7)
-                                        attpoint = attsetup.Point7.HasValue ? attsetup.Point7.Value : 0;
+                            decimal attpoint = 0;
+                            if (tanswer.QuestionAnsAttitudeID == 1)
+                                attpoint = question.Point1.HasValue ? question.Point1.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 2)
+                                attpoint = question.Point2.HasValue ? question.Point2.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 3)
+                                attpoint = question.Point3.HasValue ? question.Point3.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 4)
+                                attpoint = question.Point4.HasValue ? question.Point4.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 5)
+                                attpoint = question.Point5.HasValue ? question.Point5.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 6)
+                                attpoint = question.Point6.HasValue ? question.Point6.Value : 0;
+                            else if (tanswer.QuestionAnsAttitudeID == 7)
+                                attpoint = question.Point7.HasValue ? question.Point7.Value : 0;
 
-                                    tresultstudent.Point += attpoint;
-                                    tanswer.Point = attpoint;
-                                    if (attpoint > 0)
-                                        tresultstudent.CorrectCnt++;
-                                }
-                            }
+                            tresultstudent.Point += attpoint;
+                            tanswer.Point = attpoint;
+                            if (attpoint > 0)
+                                tresultstudent.CorrectCnt++;                         
                         }
                         tanswer.ProveStatus = ProveStatus.Proved;
                     }

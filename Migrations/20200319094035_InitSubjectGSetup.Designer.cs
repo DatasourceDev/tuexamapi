@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using tuexamapi.DAL;
 
 namespace tuexamapi.Migrations
 {
     [DbContext(typeof(TuExamContext))]
-    partial class TuExamContextModelSnapshot : ModelSnapshot
+    [Migration("20200319094035_InitSubjectGSetup")]
+    partial class InitSubjectGSetup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1039,20 +1041,10 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DescriptionType1")
+                    b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("DescriptionType2")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
-
-                    b.Property<string>("DescriptionType3")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
 
                     b.Property<decimal>("MaxPoint")
                         .HasColumnType("decimal(18,2)");
@@ -1062,6 +1054,9 @@ namespace tuexamapi.Migrations
 
                     b.Property<decimal>("PercentByType")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SubjectType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Update_By")
                         .HasColumnType("nvarchar(250)")

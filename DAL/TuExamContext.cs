@@ -52,7 +52,8 @@ namespace tuexamapi.DAL
         public DbSet<QuestionApproval> QuestionApprovals { get; set; }
         public DbSet<QuestionApprovalStaff> QuestionApprovalStaffs { get; set; }
         public DbSet<ImageFile> ImageFiles { get; set; }
-        
+        public DbSet<SubjectGSetup> SubjectGSetups { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
