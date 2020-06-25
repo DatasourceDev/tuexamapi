@@ -663,6 +663,44 @@ namespace tuexamapi.Util
             return status;
         }
 
+        public static AnswerType toAnswerType(this string text)
+        {
+            AnswerType str = AnswerType.Point;
+            switch (text)
+            {
+                case "คะแนน":
+                    str = AnswerType.Point;
+                    break;
+                case "วิชาย่อย":
+                    str = AnswerType.SubjectSub;
+                    break;               
+                case "0":
+                    str = AnswerType.Point;
+                    break;
+                case "1":
+                    str = AnswerType.SubjectSub;
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
+        public static string toAnswerType(this AnswerType statusType)
+        {
+            string str = "";
+            switch (statusType)
+            {
+                case AnswerType.Point:
+                    str = "คะแนน";
+                    break;
+                case AnswerType.SubjectSub:
+                    str = "วิชาย่อย";
+                    break;
+                default:
+                    break;
+            }
+            return str;
+        }
 
         public static ExamPeriod toExamPeriod(this string text)
         {

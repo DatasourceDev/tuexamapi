@@ -143,6 +143,12 @@ namespace tuexamapi.Models
         Type6,
         Type7,
     }
+
+    public enum AnswerType
+    {
+        Point,
+        SubjectSub
+    }
     public enum AttitudeAnsSubType
     {
         Sub1 = 1,

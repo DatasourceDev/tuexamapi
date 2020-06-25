@@ -18,6 +18,13 @@ namespace tuexamapi.Models
         [Display(Name = "ชื่อวิชาย่อย")]
         public string Name { get; set; }
 
+        [Display(Name = "คำอธิบาย")]
+        [MaxLength(500, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 500 ตัวอักษร")]
+        public string Description { get; set; }
+
+        [Display(Name = "ลำดับการทำข้อสอบ")]
+        public int? Order { get; set; }
+
         [Display(Name = "สถานะการใช้งาน")]
         public StatusType Status { get; set; }
         [Required]

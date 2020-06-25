@@ -83,15 +83,17 @@ namespace tuexamapi.Controllers
                 {
                     id = s.ID,
                     name = s.Name,
+                    description = s.Description,
                     status = s.Status.toStatusName(),
                     group = s.Subject.SubjectGroup.Name,
                     subject = s.Subject.Name,
                     subjectindex = s.Subject.Order,
+                    index = s.Order,
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderBy(o => o.group).ThenBy(o2 => o2.subjectindex).ThenBy(o3 => o3.name).Skip(skipRows).Take(25).ToArray(),
+                }).OrderBy(o => o.group).ThenBy(o => o.subjectindex).ThenBy(o => o.index).Skip(skipRows).Take(25).ToArray(),
                 pagelen = pagelen
             }); ;
 
@@ -111,12 +113,13 @@ namespace tuexamapi.Controllers
                     status = s.Status.toStatusName(),
                     subject = s.Subject.Name,
                     subjectindex = s.Subject.Order,
+                    index = s.Order,
                     group = s.Subject.SubjectGroup.Name,
                     create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderBy(o => o.group).ThenBy(o2 => o2.subjectindex).ThenBy(o3 => o3.name).ToArray();
+                }).OrderBy(o => o.group).ThenBy(o => o.subjectindex).ThenBy(o => o.index).ToArray();
             return CreatedAtAction(nameof(listActivesub), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
         }
 
@@ -130,6 +133,7 @@ namespace tuexamapi.Controllers
                 message = ResultMessage.Success,
                 id = s.ID,
                 name = s.Name,
+                description = s.Description,
                 status = s.Status,
                 subjectid = s.SubjectID,
                 groupid = s.Subject.SubjectGroupID,
@@ -164,6 +168,7 @@ namespace tuexamapi.Controllers
             sub.Update_By = model.Update_By;
             sub.Status = model.Status;
             sub.Name = model.Name;
+            sub.Description = model.Description;
             sub.SubjectID = model.SubjectID;
 
             _context.SubjectSubs.Add(sub);
@@ -190,6 +195,7 @@ namespace tuexamapi.Controllers
                 sub.Update_By = model.Update_By;
                 sub.Status = model.Status;
                 sub.Name = model.Name;
+                sub.Description = model.Description;
                 sub.SubjectID = model.SubjectID;
                 _context.SaveChanges();
                 return CreatedAtAction(nameof(update), new { result = ResultCode.Success, message = ResultMessage.Success });

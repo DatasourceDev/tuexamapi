@@ -69,6 +69,7 @@ namespace tuexamapi.Controllers
             {
                 id = s.ID,
                 name = s.Name,
+                description = s.Description,
                 order = s.Order,
                 status = s.Status.toStatusName(),
                 group = s.SubjectGroup.Name,
@@ -120,6 +121,7 @@ namespace tuexamapi.Controllers
                 message = ResultMessage.Success,
                 id = s.ID,
                 name = s.Name,
+                description = s.Description,
                 order = s.Order,
                 status = s.Status,
                 groupid = s.SubjectGroupID,
@@ -154,6 +156,7 @@ namespace tuexamapi.Controllers
             subject.Update_By = model.Update_By;
             subject.Status = model.Status;
             subject.Name = model.Name;
+            subject.Description = model.Description;
             subject.SubjectGroupID = model.SubjectGroupID;
             subject.Order = model.Order;
 
@@ -192,6 +195,7 @@ namespace tuexamapi.Controllers
                 subject.Update_By = model.Update_By;
                 subject.Status = model.Status;
                 subject.Name = model.Name;
+                subject.Description = model.Description;
                 subject.SubjectGroupID = model.SubjectGroupID;
                 subject.Order = model.Order;
                 _context.SaveChanges();

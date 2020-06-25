@@ -53,6 +53,11 @@ namespace tuexamapi.DAL
         public DbSet<QuestionApprovalStaff> QuestionApprovalStaffs { get; set; }
         public DbSet<ImageFile> ImageFiles { get; set; }
         public DbSet<SubjectGSetup> SubjectGSetups { get; set; }
+        public DbSet<SubjectESetup> SubjectESetups { get; set; }
+        public DbSet<SubjectASetup> SubjectASetups { get; set; }
+        public DbSet<SubjectTSetup> SubjectTSetups { get; set; }
+        public DbSet<SubjectSSetup> SubjectSSetups { get; set; }
+        public DbSet<SubjectRSetup> SubjectRSetups { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

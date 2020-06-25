@@ -150,10 +150,10 @@ namespace tuexamapi.Controllers
                 questions = question.ToList();
             }
 
-            int skipRows = (pageno - 1) * 50;
+            int skipRows = (pageno - 1) * 100;
             var itemcnt = questions.Count();
-            var pagelen = itemcnt / 50;
-            if (itemcnt % 50 > 0)
+            var pagelen = itemcnt / 100;
+            if (itemcnt % 100 > 0)
                 pagelen += 1;
             return CreatedAtAction(nameof(listAllquestion), new
             {
@@ -179,7 +179,7 @@ namespace tuexamapi.Controllers
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderByDescending(o => o.id).Skip(skipRows).Take(50).ToArray(),
+                }).OrderByDescending(o => o.id).Skip(skipRows).Take(100).ToArray(),
                 pagelen = pagelen,
                 itemcnt = itemcnt,
             }); ;
@@ -236,6 +236,14 @@ namespace tuexamapi.Controllers
                 fpoint = s.FPoint,
                 order = s.ChildOrder,
                 choice = s.Choice,
+                answertype = s.AnswerType,
+                anssub1 = s.AnswerSubjectSub1,
+                anssub2 = s.AnswerSubjectSub2,
+                anssub3 = s.AnswerSubjectSub3,
+                anssub4 = s.AnswerSubjectSub4,
+                anssub5 = s.AnswerSubjectSub5,
+                anssub6 = s.AnswerSubjectSub6,
+                anssub7 = s.AnswerSubjectSub7,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -439,6 +447,91 @@ namespace tuexamapi.Controllers
                 _context.SaveChanges();
             }
             return CreatedAtAction(nameof(delete), new { result = ResultCode.Success, message = ResultMessage.Success });
+        }
+
+
+        [HttpGet]
+        [Route("deleteall")]
+        public object deleteall(string choose, string update_by)
+        {
+            var chs = choose.Split(";");
+            foreach (var ch in chs)
+            {
+                if (!string.IsNullOrEmpty(ch))
+                {
+                    var id = NumUtil.ParseInteger(ch);
+                    var question = _context.Questions.Where(w => w.ID == id).OrderByDescending(i => i.ID).FirstOrDefault();
+                    if (question != null)
+                    {
+                        if (question.ApprovalStatus != QuestionApprovalType.Draft)
+                            continue;
+
+                        var tresults = _context.TestResultStudentQAnies.Where(w => w.QuestionID == question.ID);
+                        if (tresults.Count() > 0)
+                            return CreatedAtAction(nameof(delete), new { result = ResultCode.DataInUse, message = ResultMessage.DataInUse });
+
+                        var children = _context.Questions.Where(w => w.QuestionParentID == question.ID);
+                        foreach (var child in children)
+                        {
+                            var ctresults = _context.TestResultStudentQAnies.Where(w => w.QuestionID == child.ID);
+                            if (ctresults.Count() > 0)
+                                return CreatedAtAction(nameof(delete), new { result = ResultCode.DataInUse, message = ResultMessage.DataInUse });
+
+                            var canswers = _context.QuestionAnies.Where(w => w.QuestionID == child.ID);
+                            if (canswers.Count() > 0)
+                                _context.QuestionAnies.RemoveRange(canswers);
+
+                            var cqcustoms = _context.TestQCustoms.Where(w => w.QuestionID == child.ID);
+                            if (cqcustoms.Count() > 0)
+                                _context.TestQCustoms.RemoveRange(cqcustoms);
+
+                            _context.Questions.Remove(child);
+                        }
+
+                        var answers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID);
+                        if (answers.Count() > 0)
+                            _context.QuestionAnies.RemoveRange(answers);
+
+                        var qcustoms = _context.TestQCustoms.Where(w => w.QuestionID == question.ID);
+                        if (qcustoms.Count() > 0)
+                            _context.TestQCustoms.RemoveRange(qcustoms);
+
+                        var qapprs = _context.QuestionApprovals.Where(w => w.QuestionID == question.ID);
+                        foreach (var qappr in qapprs)
+                        {
+                            var staffs = _context.QuestionApprovalStaffs.Where(w => w.QuestionApprovalID == qappr.ID);
+                            if (staffs.Count() > 0)
+                                _context.QuestionApprovalStaffs.RemoveRange(staffs);
+
+                            _context.QuestionApprovals.Remove(qappr);
+                        }
+
+                        _context.Questions.Remove(question);
+                        _context.SaveChanges();
+                        if (question.QuestionParentID.HasValue)
+                        {
+                            var parent = _context.Questions.Where(w => w.ID == question.QuestionParentID).FirstOrDefault();
+                            if (parent != null)
+                            {
+                                parent.Update_On = DateUtil.Now();
+                                parent.Update_By = update_by;
+                            }
+                            var i = 1;
+                            var questions = _context.Questions.Where(w => w.QuestionParentID == question.QuestionParentID).OrderBy(o => o.ChildOrder).ThenBy(o => o.ID);
+                            foreach (var q in questions)
+                            {
+                                q.ChildOrder = i;
+                                q.Update_On = DateUtil.Now();
+                                q.Update_By = update_by;
+                                i++;
+                            }
+                            _context.SaveChanges();
+                        }
+                    }
+                }
+            }
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(approvedmasterall), new { result = ResultCode.Success, message = ResultMessage.Success });
         }
 
         [HttpGet]
@@ -927,9 +1020,26 @@ namespace tuexamapi.Controllers
             public string point6 { get; set; }
             public string point7 { get; set; }
 
+            public decimal? maxpoint { get; set; }
             public string tpoint { get; set; }
             public string fpoint { get; set; }
             public string choice { get; set; }
+
+            public string answersub1 { get; set; }
+
+            public string answersub2{ get; set; }
+
+            public string answersub3 { get; set; }
+
+            public string answersub4 { get; set; }
+
+            public string answersub5 { get; set; }
+
+            public string answersub6 { get; set; }
+
+            public string answersub7 { get; set; }
+
+            public AnswerType anstype { get; set; }
 
             public string update_by { get; set; }
 
@@ -1530,6 +1640,8 @@ namespace tuexamapi.Controllers
                 question.Status = StatusType.Active;
                 question.Remark = q.no;
                 question.Choice = q.choice;
+                question.AnswerType = q.anstype;
+                question.MaxPoint = q.maxpoint;
 
                 var subject = _context.Subjects.Include(i => i.SubjectGroup).Where(w => w.Name == q.subjectname).FirstOrDefault();
                 if (subject == null)
@@ -1562,6 +1674,31 @@ namespace tuexamapi.Controllers
                     question.Point5 = NumUtil.ParseDecimal(q.point5);
                     question.Point6 = NumUtil.ParseDecimal(q.point6);
                     question.Point7 = NumUtil.ParseDecimal(q.point7);
+
+                    if (!string.IsNullOrEmpty(q.answersub1))
+                    {
+                        var sub = _context.SubjectSubs.Where(w => w.Name == q.answersub1).FirstOrDefault();
+                        if (sub != null)
+                            question.AnswerSubjectSub1 = sub.ID;
+                    }
+                    if (!string.IsNullOrEmpty(q.answersub2))
+                    {
+                        var sub = _context.SubjectSubs.Where(w => w.Name == q.answersub2).FirstOrDefault();
+                        if (sub != null)
+                            question.AnswerSubjectSub2 = sub.ID;
+                    }
+                    if (!string.IsNullOrEmpty(q.answersub3))
+                    {
+                        var sub = _context.SubjectSubs.Where(w => w.Name == q.answersub3).FirstOrDefault();
+                        if (sub != null)
+                            question.AnswerSubjectSub3 = sub.ID;
+                    }
+                    if(!string.IsNullOrEmpty(q.answersub4))
+                    {
+                        var sub = _context.SubjectSubs.Where(w => w.Name == q.answersub4).FirstOrDefault();
+                        if (sub != null)
+                            question.AnswerSubjectSub4 = sub.ID;
+                    }
                     question.AttitudeAnsType = q.attanstype.toAttitudeAnsType();
                     question.AttitudeAnsSubType = q.subattanstype.toAttitudeAnsSubType();
                 }
@@ -1942,14 +2079,11 @@ namespace tuexamapi.Controllers
                     var model = _context.Questions.Where(w => w.ID == id).OrderByDescending(i => i.ID).FirstOrDefault();
                     if (model != null)
                     {
-                        if (model.ApprovalStatus == QuestionApprovalType.Pending)
-                        {
+                        
                             model.Update_On = DateUtil.Now();
                             model.Update_By = update_by;
                             model.ApprovalStatus = QuestionApprovalType.Approved;
                             model.Remark = "อนุมัติโดยผู้กลั่นกรองพิเศษ";
-                        }
-
                     }
                 }
             }
@@ -2121,7 +2255,7 @@ namespace tuexamapi.Controllers
         }
 
         #region temp
-        
+
         [HttpPost, DisableRequestSizeLimit]
         [Route("uploadgtemp")]
         public object uploadgtemp([FromBody] JsonElement json)
@@ -2143,8 +2277,8 @@ namespace tuexamapi.Controllers
                         {
                             var worksheet = package.Workbook.Worksheets.First();
                             int totalRows = worksheet.Dimension.End.Row;
-                            int totalCols = worksheet.Dimension.End.Column ;
-                            
+                            int totalCols = worksheet.Dimension.End.Column;
+
                             for (int i = 1; i <= totalCols; i++)
                             {
                                 var j = 1;
@@ -2152,27 +2286,116 @@ namespace tuexamapi.Controllers
                                 var row1 = worksheet.Cells[j, i].Text; j++;
                                 var row2 = worksheet.Cells[j, i].Text; j++;
                                 var row3 = worksheet.Cells[j, i].Text; j++;
+                                var row4 = worksheet.Cells[j, i].Text; j++;
                                 var question = new question_import();
                                 question.questionth = questionth;
                                 question.questiontype = "AT";
                                 question.update_by = model.update_by;
-                                question.subjectname = "G";
-                                if(i>=1 & i<=10)
-                                    question.subjectsub = "H";
-                                else if (i>10 & i<=20)
-                                    question.subjectsub = "Z";
-                                else if (i > 20 & i <= 30)
-                                    question.subjectsub = "Y";
-                                else if (i > 30 & i <= 40)
-                                    question.subjectsub = "C";
-                                else if (i > 40 & i <= 50)
-                                    question.subjectsub = "T";
 
+                                //#region G
+                                //question.subjectname = "G";
+                                //if (i >= 1 & i <= 10)
+                                //    question.subjectsub = "H";
+                                //else if (i > 10 & i <= 20)
+                                //    question.subjectsub = "Z";
+                                //else if (i > 20 & i <= 30)
+                                //    question.subjectsub = "Y";
+                                //else if (i > 30 & i <= 40)
+                                //    question.subjectsub = "C";
+                                //else if (i > 40 & i <= 50)
+                                //    question.subjectsub = "T";
+                                //#endregion
+
+                                #region R
+                                question.subjectname = "R";
+                                if (i >= 1 & i <= 8)
+                                    question.subjectsub = "O";
+                                else if (i > 8 & i <= 20)
+                                    question.subjectsub = "I";
+                                else if (i > 20 & i <= 32)
+                                    question.subjectsub = "S";
+                                else if (i > 32 & i <= 47)
+                                    question.subjectsub = "I";
+                                else if (i > 47 & i <= 62)
+                                    question.subjectsub = "S";
+                                #endregion
+
+                                //#region E
+                                //question.subjectname = "E";
+                                //if (i >= 1 & i <= 10)
+                                //    question.subjectsub = "F";
+                                //else if (i > 10 & i <= 20)
+                                //    question.subjectsub = "B";
+                                //else if (i > 20 & i <= 30)
+                                //    question.subjectsub = "W";
+                                //else if (i > 30 & i <= 40)
+                                //    question.subjectsub = "E";
+                                //else if (i > 40 & i <= 50)
+                                //    question.subjectsub = "R";
+                                //#endregion
+
+                                //#region A
+                                //question.subjectname = "A";
+                                //if (i >= 1 & i <= 13)
+                                //    question.subjectsub = "U";
+                                //else if (i > 13 & i <= 26)
+                                //    question.subjectsub = "A";
+                                //else if (i > 26 & i <= 39)
+                                //    question.subjectsub = "P";
+                                //#endregion
+
+                                //#region T
+                                //question.subjectname = "T";
+                                //if (i >= 1 & i <= 30)
+                                //    question.subjectsub = "L";
+                                //else if (i > 30 & i <= 45)
+                                //    question.subjectsub = "M";
+                                //#endregion
+
+                                //#region S
+                                //question.subjectname = "S";
+                                //if (i >= 1 & i <= 10)
+                                //    question.subjectsub = "D";
+                                //else if (i > 10 & i <= 15)
+                                //    question.subjectsub = "V";
+                                //else if (i > 15 & i <= 20)
+                                //    question.subjectsub = "G";
+                                //else if (i >= 20 & i <= 30)
+                                //    question.subjectsub = "D";
+                                //else if (i > 30 & i <= 35)
+                                //    question.subjectsub = "V";
+                                //else if (i >= 35 & i <= 40)
+                                //    question.subjectsub = "G";
+                                //#endregion
                                 question.no = (i).ToString();
-                                question.subattanstype = (3).ToString();
-                                question.point1 = row1;
-                                question.point2 = row2;
-                                question.point3= row3;
+                                question.attanstype = (4).ToString();
+                                question.subattanstype = (1).ToString();
+
+                                if(question.subjectsub == "O")
+                                {
+                                    question.anstype = AnswerType.SubjectSub;
+                                    question.answersub1 = row1;
+                                    question.answersub2 = row2;
+                                    question.answersub3 = row3;
+                                    question.answersub4 = row4;
+                                }
+                                else
+                                {
+                                    question.anstype = AnswerType.Point;
+                                    question.point1 = row1;
+                                    question.point2 = row2;
+                                    question.point3 = row3;
+                                    question.point4 = row4;
+
+                                    question.maxpoint = NumUtil.ParseDecimal(row1);
+                                    if (question.maxpoint < NumUtil.ParseDecimal(row2))
+                                        question.maxpoint = NumUtil.ParseDecimal(row2);
+                                    if (question.maxpoint < NumUtil.ParseDecimal(row3))
+                                        question.maxpoint = NumUtil.ParseDecimal(row3);
+                                    if (question.maxpoint < NumUtil.ParseDecimal(row4))
+                                        question.maxpoint = NumUtil.ParseDecimal(row4);
+                                }
+                                
                                 questions.Add(question);
                             }
                             return savequestion(questions);
@@ -2181,7 +2404,66 @@ namespace tuexamapi.Controllers
                     }
                 }
             }
-               
+
+
+            return CreatedAtAction(nameof(upload), new { result = ResultCode.InvalidInput, message = ResultMessage.InvalidInput });
+
+        }
+
+        [HttpPost, DisableRequestSizeLimit]
+        [Route("uploadganswertemp")]
+        public object uploadganswertemp([FromBody] JsonElement json)
+        {
+            var studentcode = "5906612428";
+            var model = JsonConvert.DeserializeObject<ImportExamRegisterDTO>(json.GetRawText());
+            if (model != null && model.fileupload != null)
+            {
+                var file = Convert.FromBase64String(model.fileupload.value);
+                var questions = new List<question_import>();
+                using (MemoryStream ms = new MemoryStream(file))
+                {
+                    using (ExcelPackage package = new ExcelPackage(ms))
+                    {
+                        var subject = model.fileupload.filename.Replace(".xlsx", "");
+                        var tresultID = _context.TestResults.Where(w=> subject == w.Exam.Subject.Name).OrderByDescending(o=>o.ID).Select(s=>s.ID).FirstOrDefault();
+
+                        if (package.Workbook.Worksheets.Count == 0)
+                        {
+                            return CreatedAtAction(nameof(upload), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+                        }
+                        else
+                        {
+
+                            var student = _context.Students.Where(w => w.StudentCode == studentcode).FirstOrDefault();
+                            var tsresult = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.TestResultID == tresultID).FirstOrDefault();
+                            if (student != null && tsresult != null)
+                            {
+                                var worksheet = package.Workbook.Worksheets.First();
+                                int totalRows = worksheet.Dimension.End.Row;
+                                int totalCols = worksheet.Dimension.End.Column;
+
+                                var tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tsresult.ID).ToList();
+                                for (int i = 1; i <= totalCols; i++)
+                                {
+                                    var j = 1;
+                                    var questionth = worksheet.Cells[j, i].Text; j++;
+                                    var row1 = worksheet.Cells[j, i].Text; j++;
+                                    var answer = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.Question.QuestionTh == questionth & w.TestResultStudentID == tsresult.ID).FirstOrDefault();
+                                    if (answer != null)
+                                    {
+                                        answer.Answered = true;
+                                        answer.QuestionAnsAttitudeID = NumUtil.ParseInteger(row1);
+                                    }
+
+                                }
+                                _context.SaveChanges();
+                                return CreatedAtAction(nameof(upload), new { result = ResultCode.Success, message = ResultMessage.Success, tsresultid = tsresult.ID });
+                            }
+                        }
+                    }
+                }
+            }
+
 
             return CreatedAtAction(nameof(upload), new { result = ResultCode.InvalidInput, message = ResultMessage.InvalidInput });
 

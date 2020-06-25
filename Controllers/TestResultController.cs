@@ -249,7 +249,7 @@ namespace tuexamapi.Controllers
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                 update_by = s.Update_By,
-            }).OrderBy(o => o.subjectorder).ToArray();
+            }).OrderBy(o=>o.group).ThenBy(o => o.subjectorder).ToArray();
         }
 
 
@@ -1021,26 +1021,47 @@ namespace tuexamapi.Controllers
                     {
                         if (tanswer.QuestionAnsAttitudeID.HasValue)
                         {
-                            decimal attpoint = 0;
-                            if (tanswer.QuestionAnsAttitudeID == 1)
-                                attpoint = question.Point1.HasValue ? question.Point1.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 2)
-                                attpoint = question.Point2.HasValue ? question.Point2.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 3)
-                                attpoint = question.Point3.HasValue ? question.Point3.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 4)
-                                attpoint = question.Point4.HasValue ? question.Point4.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 5)
-                                attpoint = question.Point5.HasValue ? question.Point5.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 6)
-                                attpoint = question.Point6.HasValue ? question.Point6.Value : 0;
-                            else if (tanswer.QuestionAnsAttitudeID == 7)
-                                attpoint = question.Point7.HasValue ? question.Point7.Value : 0;
+                            if(tanswer.Question.AnswerType == AnswerType.SubjectSub)
+                            {
+                                if (tanswer.QuestionAnsAttitudeID == 1)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub1;
+                                else if (tanswer.QuestionAnsAttitudeID == 2)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub2;
+                                else if (tanswer.QuestionAnsAttitudeID == 3)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub3;
+                                else if (tanswer.QuestionAnsAttitudeID == 4)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub4;
+                                else if (tanswer.QuestionAnsAttitudeID == 5)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub5;
+                                else if (tanswer.QuestionAnsAttitudeID == 6)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub6;
+                                else if (tanswer.QuestionAnsAttitudeID == 7)
+                                    tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub7;
+                                tresultstudent.CorrectCnt++;
+                            }
+                            else
+                            {
+                                decimal attpoint = 0;
+                                if (tanswer.QuestionAnsAttitudeID == 1)
+                                    attpoint = question.Point1.HasValue ? question.Point1.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 2)
+                                    attpoint = question.Point2.HasValue ? question.Point2.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 3)
+                                    attpoint = question.Point3.HasValue ? question.Point3.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 4)
+                                    attpoint = question.Point4.HasValue ? question.Point4.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 5)
+                                    attpoint = question.Point5.HasValue ? question.Point5.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 6)
+                                    attpoint = question.Point6.HasValue ? question.Point6.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 7)
+                                    attpoint = question.Point7.HasValue ? question.Point7.Value : 0;
 
-                            tresultstudent.Point += attpoint;
-                            tanswer.Point = attpoint;
-                            if (attpoint > 0)
-                                tresultstudent.CorrectCnt++;                         
+                                tresultstudent.Point += attpoint;
+                                tanswer.Point = attpoint;
+                                if (attpoint > 0)
+                                    tresultstudent.CorrectCnt++;
+                            }            
                         }
                         tanswer.ProveStatus = ProveStatus.Proved;
                     }
@@ -1098,6 +1119,6 @@ namespace tuexamapi.Controllers
                 address = s.Student.Address,
                 phone = s.Student.Phone,
             }).ToArray();
-        }
+        }        
     }
 }

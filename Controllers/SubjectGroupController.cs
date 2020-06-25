@@ -74,9 +74,13 @@ namespace tuexamapi.Controllers
 
         [HttpGet]
         [Route("listActivegroup")]
-        public object listActivegroup()
+        public object listActivegroup(bool nogreats)
         {
             var group = _context.SubjectGroups.Where(w => w.Status == StatusType.Active);
+            if(nogreats == true)
+            {
+                group = group.Where(w => w.Name != "GREATS");
+            }
             if (group != null)
                 return group.Select(s => new
                 {

@@ -19,6 +19,10 @@ namespace tuexamapi.Models
         [MaxLength(250, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 250 ตัวอักษร")]
         public string Name { get; set; }
 
+        [Display(Name = "คำอธิบาย")]
+        [MaxLength(500, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 500 ตัวอักษร")]
+        public string Description { get; set; }
+
         [Display(Name = "สถานะการใช้งาน")]
         public StatusType Status { get; set; }
 

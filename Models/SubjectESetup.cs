@@ -1,0 +1,80 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
+
+
+namespace tuexamapi.Models
+{
+    public class SubjectESetup
+    {
+        [Key]
+        public int ID { get; set; }
+
+
+        [Required]
+        [MaxLength(1000, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 1000 ตัวอักษร")]
+        [Display(Name = "คำอธิบาย type 1")]
+        public string DescriptionType1 { get; set; }
+
+        [Required]
+        [MaxLength(1000, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 1000 ตัวอักษร")]
+        [Display(Name = "คำอธิบาย type 2")]
+        public string DescriptionType2 { get; set; }
+
+
+        [Required]
+        [MaxLength(1000, ErrorMessage = "จำนวนอักษรไม่ควรเกิน 1000 ตัวอักษร")]
+        [Display(Name = "คำอธิบาย type 3")]
+        public string DescriptionType3 { get; set; }
+
+        [Required]
+        [Display(Name = "คะแนนเต็ม")]
+        public decimal MaxPoint { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentType3 { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentType2 { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentType1 { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentHigh { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentMid { get; set; }
+
+        [Required]
+        [Display(Name = "")]
+        public decimal PercentLow { get; set; }
+        
+
+        [Required]
+        [Display(Name = "วิชาย่อย")]
+        public int SubjectSubID { get; set; }
+        [Required]
+        public virtual SubjectSub SubjectSub { get; set; }
+
+
+        [Display(Name = "ผู้สร้าง")]
+        [MaxLength(250)]
+        public string Create_By { get; set; }
+        [Display(Name = "เวลาสร้าง")]
+        public Nullable<DateTime> Create_On { get; set; }
+        [Display(Name = "ผู้แก้ไข")]
+        [MaxLength(250)]
+        public string Update_By { get; set; }
+        [Display(Name = "เวลาแก้ไข")]
+        public Nullable<DateTime> Update_On { get; set; }
+    }
+}

@@ -442,6 +442,30 @@ namespace tuexamapi.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int?>("AnswerSubjectSub1")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub2")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub3")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub4")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub5")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub6")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerSubjectSub7")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AnswerType")
+                        .HasColumnType("int");
+
                     b.Property<int>("ApprovalStatus")
                         .HasColumnType("int");
 
@@ -488,6 +512,9 @@ namespace tuexamapi.Migrations
                     b.Property<string>("Keyword")
                         .HasColumnType("nvarchar(500)")
                         .HasMaxLength(500);
+
+                    b.Property<decimal?>("MaxPoint")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");
@@ -997,6 +1024,10 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(250)")
@@ -1025,7 +1056,7 @@ namespace tuexamapi.Migrations
                     b.ToTable("Subjects");
                 });
 
-            modelBuilder.Entity("tuexamapi.Models.SubjectGSetup", b =>
+            modelBuilder.Entity("tuexamapi.Models.SubjectASetup", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
@@ -1057,10 +1088,141 @@ namespace tuexamapi.Migrations
                     b.Property<decimal>("MaxPoint")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("PercentType1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SubjectSubID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("SubjectSubID");
+
+                    b.ToTable("SubjectASetups");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectESetup", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DescriptionType1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType3")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<decimal>("MaxPoint")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentHigh")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentLow")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentMid")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SubjectSubID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("SubjectSubID");
+
+                    b.ToTable("SubjectESetups");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectGSetup", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DescriptionType1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType3")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
                     b.Property<decimal>("PercentBySubjectSub")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("PercentByType")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Type1Point")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Type2Point")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Type3Point")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Update_By")
@@ -1121,6 +1283,101 @@ namespace tuexamapi.Migrations
                     b.ToTable("SubjectGroups");
                 });
 
+            modelBuilder.Entity("tuexamapi.Models.SubjectRSetup", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<decimal>("Percent")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("Sub1MoreThanPercent")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Sub2MoreThanPercent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SubjectSubID1")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubjectSubID2")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SubjectSubfromPart1ID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("SubjectRSetups");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectSSetup", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DescriptionType1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType3")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<int>("SubjectSubID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("SubjectSubID");
+
+                    b.ToTable("SubjectSSetups");
+                });
+
             modelBuilder.Entity("tuexamapi.Models.SubjectSub", b =>
                 {
                     b.Property<int>("ID")
@@ -1135,10 +1392,17 @@ namespace tuexamapi.Migrations
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
+
+                    b.Property<int?>("Order")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1158,6 +1422,64 @@ namespace tuexamapi.Migrations
                     b.HasIndex("SubjectID");
 
                     b.ToTable("SubjectSubs");
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectTSetup", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Create_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Create_On")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DescriptionType1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<string>("DescriptionType3")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1000)")
+                        .HasMaxLength(1000);
+
+                    b.Property<decimal>("MaxPoint")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PercentType3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SubjectSubID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Update_By")
+                        .HasColumnType("nvarchar(250)")
+                        .HasMaxLength(250);
+
+                    b.Property<DateTime?>("Update_On")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("SubjectSubID");
+
+                    b.ToTable("SubjectTSetups");
                 });
 
             modelBuilder.Entity("tuexamapi.Models.Test", b =>
@@ -1609,6 +1931,9 @@ namespace tuexamapi.Migrations
                     b.Property<int>("QuestionID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SubjectSubID")
+                        .HasColumnType("int");
+
                     b.Property<bool?>("TFAns")
                         .HasColumnType("bit");
 
@@ -1903,11 +2228,47 @@ namespace tuexamapi.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("tuexamapi.Models.SubjectASetup", b =>
+                {
+                    b.HasOne("tuexamapi.Models.SubjectSub", "SubjectSub")
+                        .WithMany()
+                        .HasForeignKey("SubjectSubID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectESetup", b =>
+                {
+                    b.HasOne("tuexamapi.Models.SubjectSub", "SubjectSub")
+                        .WithMany()
+                        .HasForeignKey("SubjectSubID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectSSetup", b =>
+                {
+                    b.HasOne("tuexamapi.Models.SubjectSub", "SubjectSub")
+                        .WithMany()
+                        .HasForeignKey("SubjectSubID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("tuexamapi.Models.SubjectSub", b =>
                 {
                     b.HasOne("tuexamapi.Models.Subject", "Subject")
                         .WithMany()
                         .HasForeignKey("SubjectID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("tuexamapi.Models.SubjectTSetup", b =>
+                {
+                    b.HasOne("tuexamapi.Models.SubjectSub", "SubjectSub")
+                        .WithMany()
+                        .HasForeignKey("SubjectSubID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

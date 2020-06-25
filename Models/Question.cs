@@ -95,6 +95,32 @@ namespace tuexamapi.Models
         [Display(Name = "คะแนน 7")]
         public decimal? Point7 { get; set; }
 
+        [Display(Name = "คำตอบย่อย 1")]
+        public int? AnswerSubjectSub1 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 2")]
+        public int? AnswerSubjectSub2 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 3")]
+        public int? AnswerSubjectSub3 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 4")]
+        public int? AnswerSubjectSub4 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 5")]
+        public int? AnswerSubjectSub5 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 6")]
+        public int? AnswerSubjectSub6 { get; set; }
+
+        [Display(Name = "คำตอบย่อย 7")]
+        public int? AnswerSubjectSub7 { get; set; }
+
+        [Display(Name = "ประเภทคำตอบ")]
+        public AnswerType AnswerType { get; set; }
+
+        public decimal? MaxPoint { get; set; }
+
         [Required]
         [Display(Name = "กลุ่มวิชา")]
         public int SubjectGroupID { get; set; }

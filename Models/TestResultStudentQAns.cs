@@ -40,6 +40,9 @@ namespace tuexamapi.Models
         public Nullable<DateTime> Update_On { get; set; }
 
         /* After done on test*/
+        [Display(Name = "ผลลัพธ์วิชาย่อย")]
+        public int? SubjectSubID { get; set; }
+
         [Display(Name = "คะแนนที่ได้")]
         public decimal? Point { get; set; }
         [Display(Name = "ตอบคำถามแล้ว")]

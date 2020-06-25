@@ -95,7 +95,7 @@ namespace tuexamapi.Controllers
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderBy(o => o.group).ThenBy(o2 => o2.subjectindex).ThenBy(o3 => o3.name).Skip(skipRows).Take(25).ToArray(),
+                }).OrderByDescending(o => o.id).Skip(skipRows).Take(25).ToArray(),
                 pagelen = pagelen,
                 itemcnt = itemcnt,
             }); ;

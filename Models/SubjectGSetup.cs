@@ -39,8 +39,16 @@ namespace tuexamapi.Models
         public decimal PercentBySubjectSub { get; set; }
 
         [Required]
-        [Display(Name = "คะแนนเต็มของแต่ละข้อ")]
-        public decimal MaxPoint { get; set; }
+        [Display(Name = "คะแนน Type 1")]
+        public decimal Type1Point { get; set; }
+
+        [Required]
+        [Display(Name = "คะแนน Type 2")]
+        public decimal Type2Point { get; set; }
+
+        [Required]
+        [Display(Name = "คะแนน Type 3")]
+        public decimal Type3Point { get; set; }
 
         [Display(Name = "ผู้สร้าง")]
         [MaxLength(250)]
