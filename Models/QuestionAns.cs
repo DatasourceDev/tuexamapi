@@ -22,15 +22,12 @@ namespace tuexamapi.Models
         [MaxLength(500)]
         public string Choice { get; set; }
 
-        [MaxLength(1000)]
         [Display(Name = "คำตอบ(ไทย)")]
         public string AnswerTh { get; set; }
 
-        [MaxLength(1000)]
         [Display(Name = "คำตอบ(อังกฤษ)")]
         public string AnswerEn { get; set; }
 
-        [MaxLength(1000)]
         [Display(Name = "คำอธิบาย")]
         public string Description { get; set; }
 

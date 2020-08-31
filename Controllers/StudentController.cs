@@ -503,54 +503,72 @@ namespace tuexamapi.Controllers
                             {
                                 var j = 1;
                                 var studentcode = worksheet.Cells[i, j].Text; j++;
+                                var idcard = worksheet.Cells[i, j].Text; j++;
                                 var prefix = worksheet.Cells[i, j].Text; j++;
                                 var firstname = worksheet.Cells[i, j].Text; j++;
                                 var lastname = worksheet.Cells[i, j].Text; j++;
-                                var phone = worksheet.Cells[i, j].Text; j++;
+                                var firstnameEn = worksheet.Cells[i, j].Text; j++;
+                                var lastnameEn = worksheet.Cells[i, j].Text; j++;
                                 var email = worksheet.Cells[i, j].Text; j++;
-                                var year = worksheet.Cells[i, j].Text; j++;
+                                var phone = worksheet.Cells[i, j].Text; j++;
+                                var address = worksheet.Cells[i, j].Text; j++;
                                 var faculty = worksheet.Cells[i, j].Text; j++;
+                                var course = worksheet.Cells[i, j].Text; j++;
+                                var status = worksheet.Cells[i, j].Text; j++;
 
                                 var student = _context.Students.Where(w => w.StudentCode == studentcode).FirstOrDefault();
                                 if (student == null)
                                 {
                                     student = new Student();
-                                    student.Course = Course.Thai;
+                                    student.Course = course.toCourse();
                                     student.Email = email;
                                     var fac = _context.Facultys.Where(w => w.FacultyName == faculty).FirstOrDefault();
                                     if (fac != null)
                                         student.FacultyID = fac.ID;
                                     student.FirstName = firstname;
                                     student.LastName = lastname;
+                                    student.FirstNameEn = firstnameEn;
+                                    student.LastNameEn = lastnameEn;
                                     student.Phone = phone;
                                     student.Prefix = prefix.toPrefix();
                                     student.StudentCode = studentcode;
-                                    student.Status = StatusType.Active;
+                                    student.Status = status.toStatus();
                                     student.Update_On = DateUtil.Now();
                                     student.Create_On = DateUtil.Now();
+                                    student.Create_By = model.update_by;
+                                    student.Update_By = model.update_by;
+                                    student.Address = address;
+                                    student.IDCard = idcard;
 
                                     var user = new User();
                                     user.Password = DataEncryptor.Encrypt(studentcode);
                                     user.UserName = studentcode;
                                     user.Update_On = DateUtil.Now();
                                     user.Create_On = DateUtil.Now();
-
+                                    user.Create_By = model.update_by;
+                                    user.Update_By = model.update_by;
                                     student.User = user;
                                     _context.Students.Add(student);
                                 }
                                 else
                                 {
-                                    student.Course = Course.Thai;
+                                    student.Course = course.toCourse();
                                     student.Email = email;
                                     var fac = _context.Facultys.Where(w => w.FacultyName == faculty).FirstOrDefault();
                                     if (fac != null)
                                         student.FacultyID = fac.ID;
                                     student.FirstName = firstname;
                                     student.LastName = lastname;
+                                    student.FirstNameEn = firstnameEn;
+                                    student.LastNameEn = lastnameEn;
                                     student.Phone = phone;
                                     student.Prefix = prefix.toPrefix();
                                     student.StudentCode = studentcode;
                                     student.Update_On = DateUtil.Now();
+                                    student.Update_By = model.update_by;
+                                    student.Status = status.toStatus();
+                                    student.Address = address;
+                                    student.IDCard = idcard;
                                 }
                             }
                             _context.SaveChanges();

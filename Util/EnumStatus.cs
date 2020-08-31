@@ -14,10 +14,10 @@ namespace tuexamapi.Util
             switch (text)
             {
                 case "ใช้งาน":
-                    str = StatusType.InActive;
+                    str = StatusType.Active;
                     break;
                 case "ยกเลิก":
-                    str = StatusType.Active;
+                    str = StatusType.InActive;
                     break;
                 case "0":
                     str = StatusType.InActive;

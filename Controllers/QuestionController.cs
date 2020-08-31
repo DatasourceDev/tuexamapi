@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Ajax.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using tuexamapi.DAL;
@@ -12,7 +11,6 @@ using tuexamapi.Util;
 using System.Text.Json;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
@@ -160,6 +158,7 @@ namespace tuexamapi.Controllers
                 data = questions.Select(s => new
                 {
                     id = s.ID,
+                    questionno = s.No,
                     questioncode = s.QuestionCode,
                     questiontype = s.QuestionType.toQuestionTypeMin2(),
                     questiontypeid = s.QuestionType,
@@ -179,7 +178,7 @@ namespace tuexamapi.Controllers
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderByDescending(o => o.id).Skip(skipRows).Take(100).ToArray(),
+                }).OrderBy(o => o.id).Skip(skipRows).Take(100).ToArray(),
                 pagelen = pagelen,
                 itemcnt = itemcnt,
             }); ;
@@ -244,6 +243,15 @@ namespace tuexamapi.Controllers
                 anssub5 = s.AnswerSubjectSub5,
                 anssub6 = s.AnswerSubjectSub6,
                 anssub7 = s.AnswerSubjectSub7,
+
+                anssubname1 = s.AnswerSubjectSub1.HasValue ? _context.SubjectSubs.Where(w=>w.ID == s.AnswerSubjectSub1).Select(s=>s.Name).FirstOrDefault() : "",
+                anssubname2 = s.AnswerSubjectSub2.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub2).Select(s => s.Name).FirstOrDefault() : "",
+                anssubname3 = s.AnswerSubjectSub3.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub3).Select(s => s.Name).FirstOrDefault() : "",
+                anssubname4 = s.AnswerSubjectSub4.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub4).Select(s => s.Name).FirstOrDefault() : "",
+                anssubname5 = s.AnswerSubjectSub5.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub5).Select(s => s.Name).FirstOrDefault() : "",
+                anssubname6 = s.AnswerSubjectSub6.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub6).Select(s => s.Name).FirstOrDefault() : "",
+                anssubname7 = s.AnswerSubjectSub7.HasValue ? _context.SubjectSubs.Where(w => w.ID == s.AnswerSubjectSub7).Select(s => s.Name).FirstOrDefault() : "",
+                randomchoice = s.RandomChoice,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),
@@ -1027,7 +1035,7 @@ namespace tuexamapi.Controllers
 
             public string answersub1 { get; set; }
 
-            public string answersub2{ get; set; }
+            public string answersub2 { get; set; }
 
             public string answersub3 { get; set; }
 
@@ -1642,6 +1650,18 @@ namespace tuexamapi.Controllers
                 question.Choice = q.choice;
                 question.AnswerType = q.anstype;
                 question.MaxPoint = q.maxpoint;
+                question.No = q.no;
+                if (question.QuestionTh.Contains("[") & question.QuestionTh.Contains("]"))
+                {
+                    var index1 = question.QuestionTh.IndexOf("[");
+                    var index2 = question.QuestionTh.IndexOf("]");
+                    var imagename = question.QuestionTh.Substring(index1 + 1, index2 - (index1 + 1));
+                    var fileurl = this._conf.HostUrl + "\\images\\" + imagename + ".jpg";
+                    fileurl = "<img src='" + fileurl.Replace("\\", "/") + "' />";
+                    question.QuestionTh = question.QuestionTh.Replace("[" + imagename + "]", fileurl);
+                }
+                question.QuestionEn = question.QuestionTh;
+
 
                 var subject = _context.Subjects.Include(i => i.SubjectGroup).Where(w => w.Name == q.subjectname).FirstOrDefault();
                 if (subject == null)
@@ -1693,7 +1713,7 @@ namespace tuexamapi.Controllers
                         if (sub != null)
                             question.AnswerSubjectSub3 = sub.ID;
                     }
-                    if(!string.IsNullOrEmpty(q.answersub4))
+                    if (!string.IsNullOrEmpty(q.answersub4))
                     {
                         var sub = _context.SubjectSubs.Where(w => w.Name == q.answersub4).FirstOrDefault();
                         if (sub != null)
@@ -1717,6 +1737,17 @@ namespace tuexamapi.Controllers
                         answer.Update_On = DateUtil.Now();
                         answer.Create_By = q.update_by;
                         answer.Update_By = q.update_by;
+
+                        if (answer.AnswerTh.Contains("[") & answer.AnswerTh.Contains("]"))
+                        {
+                            var index1 = answer.AnswerTh.IndexOf("[");
+                            var index2 = answer.AnswerTh.IndexOf("]");
+                            var imagename = answer.AnswerTh.Substring(index1 + 1, index2 - (index1 + 1));
+                            var fileurl = this._conf.HostUrl + "\\images\\" + imagename + ".jpg";
+                            fileurl = "<img src='" + fileurl.Replace("\\", "/") + "' />";
+                            answer.AnswerTh = answer.AnswerTh.Replace("[" + imagename + "]", fileurl);
+                        }
+                        answer.AnswerEn = answer.AnswerTh;
                         _context.QuestionAnies.Add(answer);
                         order++;
                     }
@@ -1765,6 +1796,7 @@ namespace tuexamapi.Controllers
                         var answer = new QuestionAns();
                         answer.Question = question;
                         answer.AnswerTh = ans.answerth;
+                        answer.AnswerEn = answer.AnswerTh;
                         answer.Choice = ans.choice;
                         answer.Order = order;
                         answer.Create_On = DateUtil.Now();
@@ -1846,23 +1878,25 @@ namespace tuexamapi.Controllers
         public object listapprstaff(int? id)
         {
             var questionappr = _context.QuestionApprovals.Where(w => w.QuestionID == id).OrderByDescending(o => o.ID).FirstOrDefault();
-            var staffs = _context.QuestionApprovalStaffs.Include(i => i.Staff).Where(w => w.QuestionApprovalID == questionappr.ID);
-
-            if (staffs != null)
-                return staffs.Select(s => new
-                {
-                    id = s.ID,
-                    staffid = s.StaffID,
-                    firstname = s.Staff.FirstName,
-                    lastname = s.Staff.LastName,
-                    remark = s.Remark,
-                    approvalstatusname = s.QuestionApprovalType.toQuestionApprovalStatusName(),
-                    approvalstatus = s.QuestionApprovalType,
-                    create_on = DateUtil.ToDisplayDateTime(s.Create_On),
-                    create_by = s.Create_By,
-                    update_on = DateUtil.ToDisplayDateTime(s.Update_On),
-                    update_by = s.Update_By,
-                }).ToArray();
+            if(questionappr != null)
+            {
+                var staffs = _context.QuestionApprovalStaffs.Include(i => i.Staff).Where(w => w.QuestionApprovalID == questionappr.ID);
+                if (staffs != null && staffs.Count() > 0)
+                    return staffs.Select(s => new
+                    {
+                        id = s.ID,
+                        staffid = s.StaffID,
+                        firstname = s.Staff.FirstName,
+                        lastname = s.Staff.LastName,
+                        remark = s.Remark,
+                        approvalstatusname = s.QuestionApprovalType.toQuestionApprovalStatusName(),
+                        approvalstatus = s.QuestionApprovalType,
+                        create_on = DateUtil.ToDisplayDateTime(s.Create_On),
+                        create_by = s.Create_By,
+                        update_on = DateUtil.ToDisplayDateTime(s.Update_On),
+                        update_by = s.Update_By,
+                    }).ToArray();
+            }
             return CreatedAtAction(nameof(listapprstaff), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
         }
 
@@ -2079,11 +2113,11 @@ namespace tuexamapi.Controllers
                     var model = _context.Questions.Where(w => w.ID == id).OrderByDescending(i => i.ID).FirstOrDefault();
                     if (model != null)
                     {
-                        
-                            model.Update_On = DateUtil.Now();
-                            model.Update_By = update_by;
-                            model.ApprovalStatus = QuestionApprovalType.Approved;
-                            model.Remark = "อนุมัติโดยผู้กลั่นกรองพิเศษ";
+
+                        model.Update_On = DateUtil.Now();
+                        model.Update_By = update_by;
+                        model.ApprovalStatus = QuestionApprovalType.Approved;
+                        model.Remark = "อนุมัติโดยผู้กลั่นกรองพิเศษ";
                     }
                 }
             }
@@ -2256,6 +2290,7 @@ namespace tuexamapi.Controllers
 
         #region temp
 
+
         [HttpPost, DisableRequestSizeLimit]
         [Route("uploadgtemp")]
         public object uploadgtemp([FromBody] JsonElement json)
@@ -2278,128 +2313,112 @@ namespace tuexamapi.Controllers
                             var worksheet = package.Workbook.Worksheets.First();
                             int totalRows = worksheet.Dimension.End.Row;
                             int totalCols = worksheet.Dimension.End.Column;
-
+                            var subjectname = worksheet.Cells[1, 1].Text;
                             for (int i = 1; i <= totalCols; i++)
                             {
-                                var j = 1;
-                                var questionth = worksheet.Cells[j, i].Text; j++;
+                                var j = 2;
+                                var subname = worksheet.Cells[j, i].Text; j++;
+                                var questionno = worksheet.Cells[j, i].Text; j++;
                                 var row1 = worksheet.Cells[j, i].Text; j++;
                                 var row2 = worksheet.Cells[j, i].Text; j++;
                                 var row3 = worksheet.Cells[j, i].Text; j++;
                                 var row4 = worksheet.Cells[j, i].Text; j++;
-                                var question = new question_import();
-                                question.questionth = questionth;
-                                question.questiontype = "AT";
-                                question.update_by = model.update_by;
+                                var question = _context.Questions.Where(w => w.No == questionno & w.Subject.Name == subjectname).FirstOrDefault();
+                                if (question == null)
+                                    continue;
 
-                                //#region G
-                                //question.subjectname = "G";
-                                //if (i >= 1 & i <= 10)
-                                //    question.subjectsub = "H";
-                                //else if (i > 10 & i <= 20)
-                                //    question.subjectsub = "Z";
-                                //else if (i > 20 & i <= 30)
-                                //    question.subjectsub = "Y";
-                                //else if (i > 30 & i <= 40)
-                                //    question.subjectsub = "C";
-                                //else if (i > 40 & i <= 50)
-                                //    question.subjectsub = "T";
-                                //#endregion
-
-                                #region R
-                                question.subjectname = "R";
-                                if (i >= 1 & i <= 8)
-                                    question.subjectsub = "O";
-                                else if (i > 8 & i <= 20)
-                                    question.subjectsub = "I";
-                                else if (i > 20 & i <= 32)
-                                    question.subjectsub = "S";
-                                else if (i > 32 & i <= 47)
-                                    question.subjectsub = "I";
-                                else if (i > 47 & i <= 62)
-                                    question.subjectsub = "S";
-                                #endregion
-
-                                //#region E
-                                //question.subjectname = "E";
-                                //if (i >= 1 & i <= 10)
-                                //    question.subjectsub = "F";
-                                //else if (i > 10 & i <= 20)
-                                //    question.subjectsub = "B";
-                                //else if (i > 20 & i <= 30)
-                                //    question.subjectsub = "W";
-                                //else if (i > 30 & i <= 40)
-                                //    question.subjectsub = "E";
-                                //else if (i > 40 & i <= 50)
-                                //    question.subjectsub = "R";
-                                //#endregion
-
-                                //#region A
-                                //question.subjectname = "A";
-                                //if (i >= 1 & i <= 13)
-                                //    question.subjectsub = "U";
-                                //else if (i > 13 & i <= 26)
-                                //    question.subjectsub = "A";
-                                //else if (i > 26 & i <= 39)
-                                //    question.subjectsub = "P";
-                                //#endregion
-
-                                //#region T
-                                //question.subjectname = "T";
-                                //if (i >= 1 & i <= 30)
-                                //    question.subjectsub = "L";
-                                //else if (i > 30 & i <= 45)
-                                //    question.subjectsub = "M";
-                                //#endregion
-
-                                //#region S
-                                //question.subjectname = "S";
-                                //if (i >= 1 & i <= 10)
-                                //    question.subjectsub = "D";
-                                //else if (i > 10 & i <= 15)
-                                //    question.subjectsub = "V";
-                                //else if (i > 15 & i <= 20)
-                                //    question.subjectsub = "G";
-                                //else if (i >= 20 & i <= 30)
-                                //    question.subjectsub = "D";
-                                //else if (i > 30 & i <= 35)
-                                //    question.subjectsub = "V";
-                                //else if (i >= 35 & i <= 40)
-                                //    question.subjectsub = "G";
-                                //#endregion
-                                question.no = (i).ToString();
-                                question.attanstype = (4).ToString();
-                                question.subattanstype = (1).ToString();
-
-                                if(question.subjectsub == "O")
+                                var sub = _context.SubjectSubs.Where(w => w.Name == subname).FirstOrDefault();
+                                if (sub != null)
                                 {
-                                    question.anstype = AnswerType.SubjectSub;
-                                    question.answersub1 = row1;
-                                    question.answersub2 = row2;
-                                    question.answersub3 = row3;
-                                    question.answersub4 = row4;
+                                    question.SubjectSubID = sub.ID;
+
+                                    var parent = _context.Questions.Where(w => w.ID == question.QuestionParentID).FirstOrDefault();
+                                    if (parent != null)
+                                        parent.SubjectSubID = sub.ID;
+                                }
+
+
+                                question.Update_By = model.update_by;
+                                if (question.QuestionType == QuestionType.Attitude | question.QuestionType == QuestionType.ReadingAttitude)
+                                {
+                                    if (!string.IsNullOrEmpty(row4))
+                                        question.AttitudeAnsType = AttitudeAnsType.Type4;
+                                    else if (!string.IsNullOrEmpty(row3))
+                                        question.AttitudeAnsType = AttitudeAnsType.Type3;
+                                    else
+                                        question.AttitudeAnsType = AttitudeAnsType.Type2;
+                                    question.AttitudeAnsSubType = AttitudeAnsSubType.Sub1;
+                                }
+
+                                var no = NumUtil.ParseInteger(questionno);
+
+                                var subo = _context.SubjectSubs.Where(w => w.Name == "O").FirstOrDefault();
+                                if (question.SubjectSubID == subo.ID)
+                                {
+                                    question.AnswerType = AnswerType.SubjectSub;
+                                    if (!string.IsNullOrEmpty(row1))
+                                    {
+                                        var sub1 = _context.SubjectSubs.Where(w => w.Name == row1).FirstOrDefault();
+                                        if (sub1 != null)
+                                            question.AnswerSubjectSub1 = sub1.ID;
+                                    }
+                                    if (!string.IsNullOrEmpty(row2))
+                                    {
+                                        var sub1 = _context.SubjectSubs.Where(w => w.Name == row2).FirstOrDefault();
+                                        if (sub1 != null)
+                                            question.AnswerSubjectSub2 = sub1.ID;
+                                    }
+                                    if (!string.IsNullOrEmpty(row3))
+                                    {
+                                        var sub1 = _context.SubjectSubs.Where(w => w.Name == row3).FirstOrDefault();
+                                        if (sub1 != null)
+                                            question.AnswerSubjectSub3 = sub1.ID;
+                                    }
+                                    if (!string.IsNullOrEmpty(row4))
+                                    {
+                                        var sub1 = _context.SubjectSubs.Where(w => w.Name == row4).FirstOrDefault();
+                                        if (sub1 != null)
+                                            question.AnswerSubjectSub4 = sub1.ID;
+                                    }
                                 }
                                 else
                                 {
-                                    question.anstype = AnswerType.Point;
-                                    question.point1 = row1;
-                                    question.point2 = row2;
-                                    question.point3 = row3;
-                                    question.point4 = row4;
+                                    if (question.QuestionType == QuestionType.Attitude | question.QuestionType == QuestionType.ReadingAttitude)
+                                    {
+                                        question.AnswerType = AnswerType.Point;
+                                        question.Point1 = NumUtil.ParseDecimal(row1);
+                                        question.Point2 = NumUtil.ParseDecimal(row2);
+                                        question.Point3 = NumUtil.ParseDecimal(row3);
+                                        question.Point4 = NumUtil.ParseDecimal(row4);
 
-                                    question.maxpoint = NumUtil.ParseDecimal(row1);
-                                    if (question.maxpoint < NumUtil.ParseDecimal(row2))
-                                        question.maxpoint = NumUtil.ParseDecimal(row2);
-                                    if (question.maxpoint < NumUtil.ParseDecimal(row3))
-                                        question.maxpoint = NumUtil.ParseDecimal(row3);
-                                    if (question.maxpoint < NumUtil.ParseDecimal(row4))
-                                        question.maxpoint = NumUtil.ParseDecimal(row4);
+                                        question.MaxPoint = NumUtil.ParseDecimal(row1);
+                                        if (question.MaxPoint < NumUtil.ParseDecimal(row2))
+                                            question.MaxPoint = NumUtil.ParseDecimal(row2);
+                                        if (question.MaxPoint < NumUtil.ParseDecimal(row3))
+                                            question.MaxPoint = NumUtil.ParseDecimal(row3);
+                                        if (question.MaxPoint < NumUtil.ParseDecimal(row4))
+                                            question.MaxPoint = NumUtil.ParseDecimal(row4);
+                                    }
+                                    else if (question.QuestionType == QuestionType.MultipleChoice | question.QuestionType == QuestionType.ReadingMultipleChoice)
+                                    {
+                                        var answers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID).OrderBy(o => o.Order);
+                                        var aindex = 1;
+                                        foreach (var answer in answers)
+                                        {
+                                            if (aindex == 1)
+                                                answer.Point = NumUtil.ParseDecimal(row1);
+                                            else if (aindex == 2)
+                                                answer.Point = NumUtil.ParseDecimal(row2);
+                                            else if (aindex == 3)
+                                                answer.Point = NumUtil.ParseDecimal(row3);
+                                            else if (aindex == 4)
+                                                answer.Point = NumUtil.ParseDecimal(row4);
+                                            aindex++;
+                                        }
+                                    }
                                 }
-                                
-                                questions.Add(question);
                             }
-                            return savequestion(questions);
-
+                            _context.SaveChanges();
                         }
                     }
                 }
@@ -2414,7 +2433,6 @@ namespace tuexamapi.Controllers
         [Route("uploadganswertemp")]
         public object uploadganswertemp([FromBody] JsonElement json)
         {
-            var studentcode = "5906612428";
             var model = JsonConvert.DeserializeObject<ImportExamRegisterDTO>(json.GetRawText());
             if (model != null && model.fileupload != null)
             {
@@ -2424,41 +2442,282 @@ namespace tuexamapi.Controllers
                 {
                     using (ExcelPackage package = new ExcelPackage(ms))
                     {
-                        var subject = model.fileupload.filename.Replace(".xlsx", "");
-                        var tresultID = _context.TestResults.Where(w=> subject == w.Exam.Subject.Name).OrderByDescending(o=>o.ID).Select(s=>s.ID).FirstOrDefault();
-
                         if (package.Workbook.Worksheets.Count == 0)
                         {
                             return CreatedAtAction(nameof(upload), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
                         }
                         else
                         {
+                            var subi = _context.SubjectSubs.Where(w => w.Name == "I").FirstOrDefault();
+                            var subs = _context.SubjectSubs.Where(w => w.Name == "S").FirstOrDefault();
 
-                            var student = _context.Students.Where(w => w.StudentCode == studentcode).FirstOrDefault();
-                            var tsresult = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.TestResultID == tresultID).FirstOrDefault();
-                            if (student != null && tsresult != null)
+                            var worksheet = package.Workbook.Worksheets.First();
+                            int totalRows = worksheet.Dimension.End.Row;
+                            int totalCols = worksheet.Dimension.End.Column;
+                            var subjectname = worksheet.Cells[1, 1].Text;
+                            var subject = _context.Subjects.Where(w => w.Name == subjectname).FirstOrDefault();
+                            var questionnolist = new List<int>();
+
+                            for (int col = 2; col <= totalCols; col++)
                             {
-                                var worksheet = package.Workbook.Worksheets.First();
-                                int totalRows = worksheet.Dimension.End.Row;
-                                int totalCols = worksheet.Dimension.End.Column;
+                                var no = worksheet.Cells[2, col].Text;
+                                questionnolist.Add(NumUtil.ParseInteger(no));
+                            }
 
-                                var tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tsresult.ID).ToList();
-                                for (int i = 1; i <= totalCols; i++)
+                            for (int row = 3; row <= totalRows; row++)
+                            {                                
+                                var studentcode = worksheet.Cells[row, 1].Text;
+                                var student = _context.Students.Where(w => w.StudentCode == studentcode).FirstOrDefault();
+                                if (student == null)
                                 {
-                                    var j = 1;
-                                    var questionth = worksheet.Cells[j, i].Text; j++;
-                                    var row1 = worksheet.Cells[j, i].Text; j++;
-                                    var answer = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.Question.QuestionTh == questionth & w.TestResultStudentID == tsresult.ID).FirstOrDefault();
-                                    if (answer != null)
-                                    {
-                                        answer.Answered = true;
-                                        answer.QuestionAnsAttitudeID = NumUtil.ParseInteger(row1);
-                                    }
+                                    var u = new User();
+                                    u.UserName = studentcode;
+                                    u.Password = DataEncryptor.Encrypt(studentcode);
+                                    u.ConfirmPassword = DataEncryptor.Encrypt(studentcode);
+                                    u.Create_On = DateUtil.Now();
+                                    u.Create_By = model.update_by;
+                                    u.Update_On = DateUtil.Now();
+                                    u.Update_By = model.update_by;
 
+                                    student = new Student();
+                                    student.FirstName = studentcode;
+                                    student.LastName = studentcode;
+                                    student.FirstNameEn = studentcode;
+                                    student.LastNameEn = studentcode;
+                                    student.Prefix = Prefix.Mr;
+                                    student.IDCard = studentcode;
+                                    student.StudentCode = studentcode;
+                                    student.Course = Course.Thai;
+                                    student.Status = StatusType.Active;
+                                    student.Create_On = DateUtil.Now();
+                                    student.Create_By = model.update_by;
+                                    student.Update_On = DateUtil.Now();
+                                    student.Update_By = model.update_by;
+                                    student.User = u;
+
+                                    _context.Students.Add(student);
+                                    _context.SaveChanges();
+                                }
+                                var exam = _context.Exams.Where(w => w.Subject.Name == subjectname).OrderByDescending(o => o.ID).FirstOrDefault();
+                                if (exam != null)
+                                {
+                                    var exreg = _context.ExamRegisters.Where(w => w.ExamID == exam.ID & w.StudentID == student.ID).FirstOrDefault();
+                                    if (exreg == null)
+                                    {
+                                        var reg = new ExamRegister();
+                                        reg.StudentID = student.ID;
+                                        reg.ExamID = NumUtil.ParseInteger(exam.ID);
+                                        reg.ExamRegisterType = ExamRegisterType.Advance;
+                                        reg.Create_On = DateUtil.Now();
+                                        reg.Update_On = DateUtil.Now();
+                                        reg.Create_By = model.update_by;
+                                        reg.Update_By = model.update_by;
+                                        _context.ExamRegisters.Add(reg);
+                                        _context.SaveChanges();
+                                    }
+                                }
+
+                                var testresult = _context.TestResults.Where(w => w.ExamID == exam.ID).FirstOrDefault();
+                                if (testresult == null)
+                                {
+                                    testresult = new TestResult();
+                                    testresult.ExamID = exam.ID;
+                                    testresult.ProvedCnt = 0;
+                                    testresult.Update_On = DateUtil.Now();
+                                    testresult.Create_On = DateUtil.Now();
+                                    testresult.Update_By = model.update_by;
+                                    testresult.Create_By = model.update_by;
+                                    _context.TestResults.Add(testresult);
                                 }
                                 _context.SaveChanges();
-                                return CreatedAtAction(nameof(upload), new { result = ResultCode.Success, message = ResultMessage.Success, tsresultid = tsresult.ID });
-                            }
+
+                                var tstudents = new List<TestResultStudent>();
+
+                                var tstudent = _context.TestResultStudents.Include(i => i.Test).Where(w => w.ExamID == exam.ID && w.StudentID == student.ID).FirstOrDefault();
+                                var register = _context.ExamRegisters.Where(w => w.StudentID == student.ID & w.ExamID == exam.ID).FirstOrDefault();
+                                testresult.ProveStatus = ProveStatus.Pending;
+                                testresult.Update_On = DateUtil.Now();
+                                testresult.Update_By = model.update_by;
+                                if (tstudent == null)
+                                {
+                                    tstudent = new TestResultStudent();
+                                    tstudent.ExamID = exam.ID;
+                                    tstudent.Exam = exam;
+                                    tstudent.ProveStatus = ProveStatus.Proved;
+                                    tstudent.ExamingStatus = ExamingStatus.Done;
+                                    tstudent.ExamRegisterType = register.ExamRegisterType;
+                                    tstudent.StudentID = student.ID;
+                                    tstudent.Create_On = DateUtil.Now();
+                                    tstudent.Create_By = model.update_by;
+                                    tstudent.Update_On = DateUtil.Now();
+                                    tstudent.Update_By = model.update_by;
+                                    tstudent.TestResultID = testresult.ID;
+                                    if (exam.Test == null)
+                                    {
+                                        var test = _context.Tests.Where(w => w.SubjectID == exam.SubjectID && w.Status == StatusType.Active).OrderBy(r => Guid.NewGuid()).FirstOrDefault();
+                                        if (test != null)
+                                        {
+                                            tstudent.Test = test;
+                                            tstudent.TestID = test.ID;
+                                            _context.TestResultStudents.Add(tstudent);
+                                            tstudents.Add(tstudent);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        tstudent.Test = exam.Test;
+                                        tstudent.TestID = exam.TestID.Value;
+                                        _context.TestResultStudents.Add(tstudent);
+                                        tstudents.Add(tstudent);
+                                    }
+                                }
+                                else
+                                    tstudents.Add(tstudent);
+
+                                _context.SaveChanges();
+
+                                foreach (var tstud in tstudents)
+                                {
+                                    var i = 1;
+                                    var tsqs = _context.TestResultStudentQAnies.Where(w => w.TestResultStudentID == tstud.ID).FirstOrDefault();
+                                    if (tsqs == null)
+                                    {
+                                        var qcustoms = _context.TestQCustoms.Include(i => i.Question).Where(w => w.TestID == tstud.TestID).OrderBy(o => o.Order);
+
+                                        foreach (var custom in qcustoms)
+                                        {
+                                            if (custom.Question.QuestionType == QuestionType.ReadingText | custom.Question.QuestionType == QuestionType.MultipleMatching)
+                                            {
+                                                var children = _context.Questions.Where(w => w.QuestionParentID == custom.QuestionID).OrderBy(o => o.ChildOrder);
+                                                foreach (var child in children)
+                                                {
+                                                    var tsq = new TestResultStudentQAns();
+                                                    tsq.QuestionID = child.ID;
+                                                    tsq.TestResultStudentID = tstud.ID;
+                                                    tsq.Create_On = DateUtil.Now();
+                                                    tsq.Update_On = DateUtil.Now();
+                                                    tsq.Create_By = model.update_by;
+                                                    tsq.Update_By = model.update_by;
+                                                    tsq.Index = i;
+                                                    i++;
+                                                    _context.TestResultStudentQAnies.Add(tsq);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                var tsq = new TestResultStudentQAns();
+                                                tsq.QuestionID = custom.QuestionID;
+                                                tsq.TestResultStudentID = tstud.ID;
+                                                tsq.Create_On = DateUtil.Now();
+                                                tsq.Update_On = DateUtil.Now();
+                                                tsq.Create_By = model.update_by;
+                                                tsq.Update_By = model.update_by;
+                                                tsq.Index = i;
+                                                i++;
+                                                _context.TestResultStudentQAnies.Add(tsq);
+                                            }
+
+                                        }
+
+                                        tstud.Test.QuestionCnt = i - 1;
+                                        tstud.QuestionCnt = i - 1;
+                                    }
+                                    else
+                                    {
+                                        var qcnt = _context.TestResultStudentQAnies.Where(w => w.TestResultStudentID == tstud.ID).Count();
+                                        tstud.Test.QuestionCnt = qcnt;
+                                        tstud.QuestionCnt = qcnt;
+                                    }
+                                }
+                                _context.SaveChanges();
+
+
+                                exam.ExamRegisterCnt = _context.TestResultStudents.Where(w => w.ExamID == exam.ID).Count();
+                                exam.Update_On = DateUtil.Now();
+                                exam.Update_By = model.update_by;
+
+                                _context.SaveChanges();
+
+                                var noindex = 0;
+                                for (int col = 2; col <= totalCols; col++)
+                                {
+                                    var no = questionnolist[noindex];
+
+                                    var tanswers = _context.TestResultStudentQAnies.Include(i=>i.Question).Where(w => w.Index == no & w.TestResultStudentID == tstudent.ID).FirstOrDefault();
+                                    if(tanswers != null)
+                                    {
+                                        var question = tanswers.Question;
+                                        if (question != null)
+                                        {                                           
+                                            var aindex = 1;
+                                            if (question.QuestionType == QuestionType.MultipleChoice)
+                                            {
+                                                var choose = worksheet.Cells[row, col].Text;
+                                                var choose1 = NumUtil.ParseInteger(choose);
+                                                var answers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID).OrderBy(o => o.Order);
+                                                foreach (var answer in answers)
+                                                {
+                                                    if (choose1 == aindex)
+                                                    {
+                                                        tanswers.QuestionAnsAttitudeID = choose1;
+                                                        tanswers.QuestionAnsID = answer.ID;
+                                                    }
+                                                    aindex++;
+                                                }
+                                            }
+                                            else if (question.QuestionType == QuestionType.Attitude)
+                                            {
+                                                var choose = worksheet.Cells[row, col].Text;
+                                                tanswers.Answered = true;
+
+                                                if (question.AnswerType == AnswerType.SubjectSub)
+                                                {
+                                                    if (choose == "R1")
+                                                    {
+                                                        tanswers.SubjectSubID = subi.ID;
+                                                        tanswers.QuestionAnsAttitudeID = 1;
+                                                    }
+                                                    else if (choose == "R2") {
+                                                        tanswers.SubjectSubID = subs.ID;
+                                                        tanswers.QuestionAnsAttitudeID = 2;
+                                                    }
+                                                    
+                                                }
+                                                else
+                                                {
+                                                    var choose1 = NumUtil.ParseInteger(choose);
+                                                    tanswers.QuestionAnsAttitudeID = choose1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                   
+                                    noindex++;
+                                }
+
+
+                                var tresultstudent = _context.TestResultStudents.Where(w => w.ID == tstudent.ID).FirstOrDefault();
+                                if (tresultstudent != null)
+                                {
+                                    if (tresultstudent.ExamingStatus == ExamingStatus.Examing)
+                                    {
+                                        tresultstudent.ExamingStatus = ExamingStatus.Done;
+                                        tresultstudent.End_On = DateUtil.Now();
+                                    }
+                                    else if (tresultstudent.ExamingStatus == ExamingStatus.None)
+                                    {
+                                        tresultstudent.ExamingStatus = ExamingStatus.Absent;
+                                    }
+
+                                    tresultstudent.Update_By = model.update_by;
+                                    tresultstudent.Update_On = DateUtil.Now();
+                                    _context.SaveChanges();
+                                    prove(tstudent.ID, model.update_by);
+                                }
+                            }                           
+                            _context.SaveChanges();
+                            return CreatedAtAction(nameof(upload), new { result = ResultCode.Success, message = ResultMessage.Success, tsresultid = 0 });
+
                         }
                     }
                 }
@@ -2468,6 +2727,230 @@ namespace tuexamapi.Controllers
             return CreatedAtAction(nameof(upload), new { result = ResultCode.InvalidInput, message = ResultMessage.InvalidInput });
 
         }
+        private decimal prove(int? tresultstudentid, string update_by)
+        {
+            var tresultstudent = _context.TestResultStudents.Where(w => w.ID == tresultstudentid).FirstOrDefault();
+            if (tresultstudent == null)
+                return 0;
+
+            tresultstudent.Point = 0;
+            tresultstudent.ProveStatus = ProveStatus.Pending;
+            tresultstudent.WrongCnt = 0;
+            tresultstudent.CorrectCnt = 0;
+
+            /*calculate point and prove per question*/
+            var tanswers = _context.TestResultStudentQAnies.Where(w => w.TestResultStudentID == tresultstudentid);
+            foreach (var tanswer in tanswers)
+            {
+                var question = _context.Questions.Where(w => w.ID == tanswer.QuestionID).FirstOrDefault();
+                if (question != null)
+                {
+                    if (question.QuestionType == QuestionType.MultipleChoice)
+                    {
+                        if (tanswer.QuestionAnsID.HasValue)
+                        {
+                            var answer = _context.QuestionAnies.Where(w => w.ID == tanswer.QuestionAnsID).FirstOrDefault();
+                            if (answer != null)
+                            {
+                                tresultstudent.Point += answer.Point;
+                                tanswer.Point = answer.Point;
+                                if (answer.Point > 0)
+                                    tresultstudent.CorrectCnt++;
+                            }
+                        }
+                        tanswer.ProveStatus = ProveStatus.Proved;
+                    }
+                    else if (question.QuestionType == QuestionType.TrueFalse)
+                    {
+                        if (tanswer.TFAns.HasValue)
+                        {
+                            decimal tfpoint = 0;
+                            if (tanswer.TFAns.Value == true)
+                                tfpoint = question.TPoint.HasValue ? question.TPoint.Value : 0;
+                            else if (tanswer.TFAns.Value == false)
+                                tfpoint = question.FPoint.HasValue ? question.FPoint.Value : 0;
+
+                            tresultstudent.Point += tfpoint;
+                            tanswer.Point = tfpoint;
+                            if (tfpoint > 0)
+                                tresultstudent.CorrectCnt++;
+                        }
+                        tanswer.ProveStatus = ProveStatus.Proved;
+                    }
+                    else if (question.QuestionType == QuestionType.MultipleMatching | question.QuestionType == QuestionType.MultipleMatchingSub)
+                    {
+                        var answer = _context.QuestionAnies.Where(w => w.ID == tanswer.QuestionAnsID).FirstOrDefault();
+                        if (answer != null)
+                        {
+                            if (question.Choice == answer.Choice)
+                            {
+                                tresultstudent.CorrectCnt++;
+                                if (question.Point.HasValue)
+                                {
+                                    tresultstudent.Point += question.Point.Value;
+                                    tanswer.Point = question.Point.Value;
+                                }
+                            }
+                        }
+                        tanswer.ProveStatus = ProveStatus.Proved;
+                    }
+                    else if (question.QuestionType == QuestionType.ShortAnswer | question.QuestionType == QuestionType.Essay | question.QuestionType == QuestionType.Assignment)
+                    {
+                        if (tanswer.Point.HasValue)
+                        {
+                            tresultstudent.Point += tanswer.Point.Value;
+                            if (tanswer.Point.Value > 0)
+                                tresultstudent.CorrectCnt++;
+                            tanswer.ProveStatus = ProveStatus.Proved;
+                        }
+                    }
+                    else if (question.QuestionType == QuestionType.Attitude)
+                    {
+                        if (tanswer.QuestionAnsAttitudeID.HasValue)
+                        {
+                            if (tanswer.Question.AnswerType == AnswerType.SubjectSub)
+                            {
+                                if (!tanswer.SubjectSubID.HasValue)
+                                {
+                                    if (tanswer.QuestionAnsAttitudeID == 1)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub1;
+                                    else if (tanswer.QuestionAnsAttitudeID == 2)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub2;
+                                    else if (tanswer.QuestionAnsAttitudeID == 3)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub3;
+                                    else if (tanswer.QuestionAnsAttitudeID == 4)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub4;
+                                    else if (tanswer.QuestionAnsAttitudeID == 5)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub5;
+                                    else if (tanswer.QuestionAnsAttitudeID == 6)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub6;
+                                    else if (tanswer.QuestionAnsAttitudeID == 7)
+                                        tanswer.SubjectSubID = tanswer.Question.AnswerSubjectSub7;
+                                }
+                                tresultstudent.CorrectCnt++;
+                            }
+                            else
+                            {
+                                decimal attpoint = 0;
+                                if (tanswer.QuestionAnsAttitudeID == 1)
+                                    attpoint = question.Point1.HasValue ? question.Point1.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 2)
+                                    attpoint = question.Point2.HasValue ? question.Point2.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 3)
+                                    attpoint = question.Point3.HasValue ? question.Point3.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 4)
+                                    attpoint = question.Point4.HasValue ? question.Point4.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 5)
+                                    attpoint = question.Point5.HasValue ? question.Point5.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 6)
+                                    attpoint = question.Point6.HasValue ? question.Point6.Value : 0;
+                                else if (tanswer.QuestionAnsAttitudeID == 7)
+                                    attpoint = question.Point7.HasValue ? question.Point7.Value : 0;
+
+                                tresultstudent.Point += attpoint;
+                                tanswer.Point = attpoint;
+                                if (attpoint > 0)
+                                    tresultstudent.CorrectCnt++;
+                            }
+                        }
+                        tanswer.ProveStatus = ProveStatus.Proved;
+                    }
+                }
+            }
+            _context.SaveChanges();
+
+            /*calculate point and prove per student test*/
+            var unprove = _context.TestResultStudentQAnies.Where(w => w.ProveStatus == ProveStatus.Pending & w.TestResultStudentID == tresultstudentid).Count();
+            if (unprove > 0)
+                tresultstudent.ProveStatus = ProveStatus.Pending;
+            else
+                tresultstudent.ProveStatus = ProveStatus.Proved;
+
+            tresultstudent.WrongCnt = tresultstudent.QuestionCnt - tresultstudent.CorrectCnt;
+            _context.SaveChanges();
+
+            /*calculate point and prove per exam*/
+            var students = _context.TestResultStudents.Where(w => w.TestResultID == tresultstudent.TestResultID);
+            var provecnt = students.Where(w => w.ProveStatus == ProveStatus.Proved).Count();
+            var studentcnt = students.Count();
+            var tresult = _context.TestResults.Where(w => w.ID == tresultstudent.TestResultID).FirstOrDefault();
+            if (tresult != null)
+            {
+                tresult.ProvedCnt = provecnt;
+                if (studentcnt == provecnt)
+                {
+                    tresult.ProveStatus = ProveStatus.Proved;
+                    tresult.ProvedCnt = provecnt;
+                    tresult.Update_By = update_by;
+                    tresult.Update_On = DateUtil.Now();
+                }
+            }
+            _context.SaveChanges();
+            return tresultstudent.Point;
+        }
+        private List<TestResultStudentQAns> getrandomquestion(int tstudentid, TestQRandom ran, QuestionLevel level, int number, string update_by)
+        {
+            var rancnt = 0;
+            var ranresult = new List<TestResultStudentQAns>();
+
+            for (var i = 0; i < 10; i++)
+            {
+                rancnt = 0;
+                ranresult = new List<TestResultStudentQAns>();
+                var qrans = _context.Questions
+                    .Where(w => w.SubjectGroupID == ran.Test.SubjectGroupID
+                    & w.SubjectID == ran.Test.SubjectID
+                    & w.QuestionType == ran.QuestionType
+                    & w.QuestionLevel == level && !w.QuestionParentID.HasValue)
+                    .OrderBy(r => Guid.NewGuid());
+
+                if (qrans.Count() == 0)
+                    break;
+
+                foreach (var q in qrans)
+                {
+                    if (rancnt >= number)
+                        break;
+
+                    if (q.QuestionType == QuestionType.ReadingText | q.QuestionType == QuestionType.MultipleMatching)
+                    {
+                        var children = _context.Questions.Where(w => w.QuestionParentID == q.ID);
+                        if (children.Count() + rancnt > number)
+                            break;
+                        foreach (var child in children)
+                        {
+                            var tsq = new TestResultStudentQAns();
+                            tsq.QuestionID = child.ID;
+                            tsq.TestResultStudentID = tstudentid;
+                            tsq.Create_On = DateUtil.Now();
+                            tsq.Create_By = update_by;
+                            tsq.Update_On = DateUtil.Now();
+                            tsq.Update_By = update_by;
+                            ranresult.Add(tsq);
+                        }
+                        rancnt += children.Count();
+                    }
+                    else
+                    {
+                        var tsq = new TestResultStudentQAns();
+                        tsq.QuestionID = q.ID;
+                        tsq.TestResultStudentID = tstudentid;
+                        tsq.Create_On = DateUtil.Now();
+                        tsq.Create_By = update_by;
+                        tsq.Update_On = DateUtil.Now();
+                        tsq.Update_By = update_by;
+                        ranresult.Add(tsq);
+                        rancnt++;
+                    }
+
+                }
+
+                if (rancnt == number)
+                    break;
+            }
+            return ranresult;
+        }
+
         #endregion
 
     }

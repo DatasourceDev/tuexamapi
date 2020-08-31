@@ -516,6 +516,9 @@ namespace tuexamapi.Migrations
                     b.Property<decimal?>("MaxPoint")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("No")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Order")
                         .HasColumnType("int");
 
@@ -548,8 +551,7 @@ namespace tuexamapi.Migrations
                         .HasMaxLength(250);
 
                     b.Property<string>("QuestionEn")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("QuestionLevel")
                         .HasColumnType("int");
@@ -558,11 +560,13 @@ namespace tuexamapi.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("QuestionTh")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
+
+                    b.Property<bool>("RandomChoice")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Remark")
                         .HasColumnType("nvarchar(1000)")
@@ -617,12 +621,10 @@ namespace tuexamapi.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("AnswerEn")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("AnswerTh")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Choice")
                         .HasColumnType("nvarchar(500)")
@@ -636,8 +638,7 @@ namespace tuexamapi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileUrl")
                         .HasColumnType("nvarchar(500)")
@@ -1808,6 +1809,10 @@ namespace tuexamapi.Migrations
 
                     b.Property<DateTime?>("Create_On")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(250)")

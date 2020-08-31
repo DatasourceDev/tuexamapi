@@ -335,10 +335,10 @@ namespace tuexamapi.Controllers
             var examid = NumUtil.ParseInteger(exam_search);
             var exam = _context.ExamRegisters.Include(i => i.Exam).Where(w => w.ExamID == examid);
 
-            int skipRows = (pageno - 1) * 25;
+            int skipRows = (pageno - 1) * 200;
             var itemcnt = exam.Count();
-            var pagelen = itemcnt / 25;
-            if (itemcnt % 25 > 0)
+            var pagelen = itemcnt / 200;
+            if (itemcnt % 200 > 0)
                 pagelen += 1;
             return CreatedAtAction(nameof(listAllexam), new
             {
@@ -362,7 +362,7 @@ namespace tuexamapi.Controllers
                     create_by = s.Create_By,
                     update_on = DateUtil.ToDisplayDateTime(s.Update_On),
                     update_by = s.Update_By,
-                }).OrderBy(o => o.studentcode).Skip(skipRows).Take(25).ToArray(),
+                }).OrderBy(o => o.studentcode).Skip(skipRows).Take(200).ToArray(),
                 pagelen = pagelen,
                 itemcnt = itemcnt,
             }) ;

@@ -242,6 +242,7 @@ namespace tuexamapi.Controllers
                 group = s.Exam.Subject.SubjectGroup.ID,
                 doexamorder = s.Exam.Subject.SubjectGroup.DoExamOrder,
                 subject = s.Exam.Subject.Name,
+                subectdescription  = s.Exam.Subject.Description,
                 subjectorder = s.Exam.Subject.Order,
                 examingstatus = s.ExamingStatus,
                 allowexam = !s.Exam.Subject.SubjectGroup.DoExamOrder,
@@ -352,7 +353,7 @@ namespace tuexamapi.Controllers
 
         [HttpGet]
         [Route("con")]
-        public object con(int? id, int? ix, string update_by)
+        public object con(int? id, int? ix,bool? displayrandom, string update_by)
         {
             var model = _context.TestResultStudentQAnies.Where(w => w.TestResultStudentID == id & w.Index == ix).FirstOrDefault();
             if (model == null)
@@ -372,7 +373,15 @@ namespace tuexamapi.Controllers
             var mmanswers = new List<QuestionAns>();
             var mcanswers = new List<QuestionAns>();
             if (question.QuestionType == QuestionType.MultipleChoice)
-                mcanswers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID).ToList();
+            {
+                if (question.RandomChoice & displayrandom == true) 
+                    mcanswers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID).OrderBy(o => Guid.NewGuid()).ToList();
+                else
+                    mcanswers = _context.QuestionAnies.Where(w => w.QuestionID == question.ID).OrderBy(o => o.Order).ToList();
+
+            }
+
+
             else if (question.QuestionType == QuestionType.MultipleMatchingSub)
                 mmanswers = _context.QuestionAnies.Where(w => w.QuestionID == question.QuestionParentID).ToList();
             else if (question.QuestionType == QuestionType.Attitude)
@@ -444,7 +453,7 @@ namespace tuexamapi.Controllers
                 fileurlanswer = model.FileUrl,
                 point = model.Point,
                 provestatus = model.ProveStatus.toProveStatusName(),
-                mcanswers = mcanswers.OrderBy(o => o.Order).Select(s => new
+                mcanswers = mcanswers.Select(s => new
                 {
                     id = s.ID,
                     answerth = s.AnswerTh,
@@ -890,6 +899,7 @@ namespace tuexamapi.Controllers
                 sendbyemail = tresult.SendByEmail,
                 sendbypost = tresult.SendByPost,
                 other = tresult.Other,
+                description = tresult.Description,
                 showresult = tresult.Test.ShowResult,
             }); ;
         }
@@ -934,6 +944,7 @@ namespace tuexamapi.Controllers
             tresultstudent.Update_On = DateUtil.Now();
             tresultstudent.SendByEmail = model.SendByEmail;
             tresultstudent.SendByPost = model.SendByPost;
+            tresultstudent.Description = model.Description;
             tresultstudent.Other = model.Other;
             _context.SaveChanges();
             prove(model.ID, model.Update_By);
@@ -1098,6 +1109,7 @@ namespace tuexamapi.Controllers
             _context.SaveChanges();
             return tresultstudent.Point;
         }
+      
 
         [HttpGet]
         [Route("listrepair")]

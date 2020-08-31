@@ -78,8 +78,6 @@ namespace tuexamapi.Controllers
 
 
                 var filePath = Directory.GetCurrentDirectory() + "\\wwwroot\\images\\" + imgfile.ID + ".png";
-
-
                 var filename = filePath;
                 filePath = filePath.Replace("\\", "/");
 

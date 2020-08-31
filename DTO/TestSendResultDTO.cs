@@ -25,6 +25,8 @@ namespace tuexamapi.DTO
         public string Update_By { get; set; }
 
         public bool SendByEmail { get; set; }
+
+        public string Description { get; set; }
         public bool SendByPost { get; set; }
         public bool Other { get; set; }
 

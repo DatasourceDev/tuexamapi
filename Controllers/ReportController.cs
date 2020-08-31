@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Ajax.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using tuexamapi.DAL;
@@ -12,7 +11,6 @@ using tuexamapi.Util;
 using System.Text.Json;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
@@ -22,6 +20,8 @@ using Microsoft.AspNetCore.Hosting;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.html.simpleparser;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+using System.Net.Mail;
 
 namespace tuexamapi.Controllers
 {
@@ -304,10 +304,10 @@ namespace tuexamapi.Controllers
                 lastnameen = student.LastNameEn,
                 studentcode = student.StudentCode,
                 course = student.Course.toCourseName(),
-                faculty = student.Faculty!=null? student.Faculty.FacultyName : "",
+                faculty = student.Faculty != null ? student.Faculty.FacultyName : "",
                 data = tresults.Select(s => new RptExamStudentFormDtl
                 {
-                    id= s.ID,
+                    id = s.ID,
                     test = s.Test.Name,
                     group = s.Exam.SubjectGroup.Name,
                     subject = s.Exam.Subject.Name,
@@ -538,6 +538,42 @@ namespace tuexamapi.Controllers
             return lists.OrderBy(o => o.id).ToList();
         }
 
+        public static List<RptExamAnswer> examanswer(TuExamContext _context, int? examid)
+        {
+            var lists = new List<RptExamAnswer>();
+            var tresult = _context.TestResults
+                .Include(i => i.Exam)
+                .Where(w => w.ExamID == examid).FirstOrDefault();
+
+            var tstudents = _context.TestResultStudents.Include(i => i.Student).Where(w => w.TestResultID == tresult.ID).OrderBy(o => o.Student.StudentCode);
+            foreach (var tstudent in tstudents)
+            {
+                var examanswer = new RptExamAnswer();
+                examanswer.StudentCode = tstudent.Student.StudentCode;
+                examanswer.Answers = new List<int>();
+
+                var tquestions = _context.TestResultStudentQAnies.Include(i => i.Question).Include(i => i.QuestionAns).Where(w => w.TestResultStudentID == tstudent.ID).OrderBy(o => o.Index);
+                foreach (var tquestion in tquestions)
+                {
+                    if (tquestion.Question.QuestionType == QuestionType.MultipleChoice)
+                    {
+                        if (tquestion.QuestionAns != null)
+                            examanswer.Answers.Add(tquestion.QuestionAns.Order);
+                        else
+                            examanswer.Answers.Add(0);
+                    }
+                    else if (tquestion.Question.QuestionType == QuestionType.Attitude)
+                        examanswer.Answers.Add(tquestion.QuestionAnsAttitudeID.HasValue ? tquestion.QuestionAnsAttitudeID.Value : 0);
+                    else
+                        examanswer.Answers.Add(0);
+                }
+                lists.Add(examanswer);
+            }
+
+            return lists;
+
+        }
+
     }
 
     [ApiController]
@@ -547,11 +583,13 @@ namespace tuexamapi.Controllers
     {
         private readonly ILogger<ReportController> _logger;
         public TuExamContext _context;
+        public SystemConf _smtp;
 
-        public ReportController(ILogger<ReportController> logger, TuExamContext context)
+        public ReportController(ILogger<ReportController> logger, TuExamContext context, IOptions<SystemConf> smtp)
         {
             this._logger = logger;
             this._context = context;
+            this._smtp = smtp.Value;
         }
 
 
@@ -663,7 +701,7 @@ namespace tuexamapi.Controllers
             if (studentid == 0)
                 return CreatedAtAction(nameof(examstudentall), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
 
-            var student = _context.Students.Include(i=>i.Faculty).Where(w => w.ID == studentid).FirstOrDefault();
+            var student = _context.Students.Include(i => i.Faculty).Where(w => w.ID == studentid).FirstOrDefault();
             if (student == null)
                 return CreatedAtAction(nameof(examstudentall), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
 
@@ -740,7 +778,94 @@ namespace tuexamapi.Controllers
 
         }
 
+        [HttpGet]
+        [Route("examanswer")]
+        public object examanswer(int? examid)
+        {
+            var lists = Rpt.examanswer(_context, examid);
+            return CreatedAtAction(nameof(examanswer), new
+            {
+                data = lists.ToArray(),
+            }); ;
 
+        }
+        public string sendNotificationEmail(string to, string header, string message)
+        {
+            var msg = new System.Text.StringBuilder();
+            try
+            {
+                var SMTP_SERVER = _smtp.SMTP_SERVER;
+                var SMTP_PORT = _smtp.SMTP_PORT;
+                var SMTP_USERNAME = _smtp.SMTP_USERNAME;
+                var SMTP_PASSWORD = _smtp.SMTP_PASSWORD;
+                var SMTP_FROM = _smtp.SMTP_FROM;
+                bool STMP_SSL = _smtp.STMP_SSL;
+
+                SmtpClient smtpClient = new SmtpClient(SMTP_SERVER, SMTP_PORT);
+                System.Net.NetworkCredential cred = new System.Net.NetworkCredential(SMTP_USERNAME, SMTP_PASSWORD);
+
+                smtpClient.UseDefaultCredentials = false;
+                smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
+                smtpClient.EnableSsl = STMP_SSL;
+
+                var mail = new MailMessage(SMTP_FROM, to, header, message);
+                mail.BodyEncoding = Encoding.UTF8;
+                mail.IsBodyHtml = true;
+
+                smtpClient.Credentials = cred;
+                smtpClient.Send(mail);
+
+                return msg.ToString();
+            }
+            catch (Exception ex)
+            {
+                msg.AppendLine(" EXCEPTION: " + ex.Message);
+            }
+            return msg.ToString();
+        }
+
+        [HttpGet]
+        [Route("mailtest")]
+        public object mailtest(string email)
+        {
+            var msg = sendNotificationEmail("voranun.datasource@gmail.com", "ทดสอบส่ง email", "ทดสอบส่ง email");
+            return CreatedAtAction(nameof(mailtest), new { Msg = msg });
+        }
+        //public async Task<string> RenderViewAsync<TModel>(string viewName, TModel model, bool partial = false)
+        //{
+        //    if (string.IsNullOrEmpty(viewName))
+        //    {
+        //        viewName = this.ControllerContext.ActionDescriptor.ActionName;
+        //    }
+
+        //    this.ViewData.Model = model;
+
+        //    using (var writer = new StringWriter())
+        //    {
+        //        IViewEngine viewEngine = this.HttpContext.RequestServices.GetService(typeof(ICompositeViewEngine)) as ICompositeViewEngine;
+        //        ViewEngineResult viewResult = viewEngine.FindView(this.ControllerContext, viewName, !partial);
+
+        //        if (viewResult.Success == false)
+        //        {
+        //            return $"A view with the name {viewName} could not be found";
+        //        }
+
+        //        ViewContext viewContext = new ViewContext(
+        //            this.ControllerContext,
+        //            viewResult.View,
+        //            this.ViewData,
+        //            this.TempData,
+        //            writer,
+        //            new HtmlHelperOptions()
+        //        );
+
+        //        await viewResult.View.RenderAsync(viewContext);
+
+        //        return writer.GetStringBuilder().ToString();
+        //    }
+
+
+        //}
     }
 
     [ApiController]
@@ -1269,6 +1394,451 @@ namespace tuexamapi.Controllers
                 }
             }
             return CreatedAtAction(nameof(questionlevel), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+        }
+
+        [HttpGet]
+        [Route("examanswer")]
+        public async Task<object> examanswer(int? examid)
+        {
+            var lists = new List<RptExamAnswer>();
+
+            lists = Rpt.examanswer(_context, examid);
+
+            var date = DateUtil.ToInternalDate3(DateUtil.Now());
+            var filePath = Directory.GetCurrentDirectory() + "\\wwwroot\\temp\\examanswer" + date + ".xlsx";
+
+            using (var package = new ExcelPackage())
+            {
+                var workbook = package.Workbook;
+                var worksheet = workbook.Worksheets.Add("Sheet1");
+                var col = 1;
+                var row = 1;
+                worksheet.Cells[row, col].Value = "รหัสนักศึกษา"; col++;
+                if (lists != null && lists.Count > 0)
+                {
+                    var questioncnt = lists[0].Answers.Count();
+                    for (var i = 0; i < questioncnt; i++)
+                    {
+                        worksheet.Cells[row, col].Value = i + 1; col++;
+                    }
+                }
+                row++;
+                col = 1;
+                foreach (var item in lists)
+                {
+                    worksheet.Cells[row, col].Value = item.StudentCode; col++;
+                    foreach (var answer in item.Answers)
+                    {
+                        worksheet.Cells[row, col].Value = answer;
+                        col++;
+                    }
+                    row++;
+                    col = 1;
+                }
+
+                var filename = filePath;
+                filePath = filePath.Replace("\\", "/");
+                package.SaveAs(new FileInfo(filePath));
+                if (System.IO.File.Exists(filename))
+                {
+                    var memory = new MemoryStream();
+                    using (var stream = new FileStream(filename, FileMode.Open))
+                    {
+                        await stream.CopyToAsync(memory);
+                    }
+                    memory.Position = 0;
+                    var mimeType = "application/vnd.ms-excel";
+                    return File(memory, mimeType, Path.GetFileName(filename));
+                }
+            }
+            return CreatedAtAction(nameof(exambymonth), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
+
+        }
+
+
+        [HttpGet]
+        [Route("examgreatsexcel")]
+        public async Task<object> examgreatsexcel(string from_search, string to_search)
+        {
+            if (string.IsNullOrEmpty(from_search))
+                return CreatedAtAction(nameof(examgreatsexcel), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+            if (string.IsNullOrEmpty(to_search))
+                return CreatedAtAction(nameof(examgreatsexcel), new { result = ResultCode.InputHasNotFound, message = ResultMessage.InputHasNotFound });
+
+            var dfrom_search = DateUtil.ToDate(from_search);
+            var dto_search = DateUtil.ToDate(to_search);
+            var lists = _context.TestResultStudents
+                .Include(i => i.Exam)
+                .Include(i => i.Student)
+                .Where(w => w.Exam.ExamDate.Value.Date >= dfrom_search.Value.Date & w.Exam.ExamDate.Value.Date <= dto_search.Value.Date)
+                .OrderBy(o => o.Exam.ExamDate)
+                .ThenBy(o => o.Student.Faculty)
+                .ThenBy(o => o.Student.StudentCode)
+                .Select(s => new { Student = s.Student, ExamDate = s.Exam.ExamDate.Value.Date }).Distinct();
+
+            var filePath = Directory.GetCurrentDirectory() + "\\wwwroot\\temp\\examgreatsexcel" + DateUtil.ToInternalDate3(dfrom_search) + "_" + DateUtil.ToInternalDate3(dto_search) + ".xlsx";
+            using (var package = new ExcelPackage())
+            {
+                var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
+
+                var workbook = package.Workbook;
+                var worksheet = workbook.Worksheets.Add("Sheet1");
+                var col = 1;
+                var row = 1;
+                worksheet.Cells[row, col].Value = ""; col++;
+
+                SubjectGSetup setupg = null;
+                SubjectRSetup setupr = null;
+                SubjectESetup setupe = null;
+                SubjectASetup setupa = null;
+                SubjectTSetup setupt = null;
+                SubjectSSetup setups = null;
+                foreach (var subject in subjects)
+                {
+                    var subs = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).OrderBy(o => o.Order);
+                    worksheet.Cells[row, col].Value = subject.Name;
+                    worksheet.Cells[row, col].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet.Cells[row, col].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    if (subject.Name == "G")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                        setupg = _context.SubjectGSetups.FirstOrDefault();
+                    }
+                    else if (subject.Name == "R")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                        setupr = _context.SubjectRSetups.FirstOrDefault();
+                    }
+                    else if (subject.Name == "E")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                        setupe = _context.SubjectESetups.FirstOrDefault();
+                    }
+                    else if (subject.Name == "A")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                        setupa = _context.SubjectASetups.FirstOrDefault();
+                    }
+                    else if (subject.Name == "T")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                        setupt = _context.SubjectTSetups.FirstOrDefault();
+                    }
+                    else if (subject.Name == "S")
+                    {
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                        setups = _context.SubjectSSetups.FirstOrDefault();
+                    }
+                    worksheet.Cells[row, col, row, (col + subs.Count()) - 1].Merge = true;
+                    col += subs.Count();
+                }
+                worksheet.Cells[row, col].Value = "วันที่สอบ"; col++;
+                worksheet.Cells[row, col].Value = "วันที่หมดอายุ"; col++;
+
+                row++;
+                col = 1;
+
+                worksheet.Cells[row, col].Value = "รหัสนักศึกษา"; col++;
+
+                foreach (var subject in subjects)
+                {
+                    var subs = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).OrderBy(o => o.Order);
+                    foreach (var sub in subs)
+                    {
+                        worksheet.Cells[row, col].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                        worksheet.Cells[row, col].Value = sub.Name; col++;
+                    }
+                }
+
+                row++;
+                col = 1;
+
+                foreach (var list in lists)
+                {
+                    //if (row == 10)
+                    //    break;
+
+                    worksheet.Cells[row, col].Value = list.Student.StudentCode; col++;
+                    foreach (var subject in subjects)
+                    {
+                        var tresultstudent = _context.TestResultStudents
+                            .Include(i => i.Exam)
+                            .Where(w => w.StudentID == list.Student.ID & w.Exam.SubjectID == subject.ID & w.Exam.ExamDate.Value.Date == list.ExamDate).FirstOrDefault();
+
+                        var tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tresultstudent.ID);
+                        if (tsanswers == null || tsanswers.Count() == 0)
+                            continue;
+
+                        var type1cnt = 0;
+                        var type2cnt = 0;
+                        var type3cnt = 0;
+
+                        if (subject.Name == "R")
+                        {
+                            var i = _context.SubjectSubs.Where(w => w.Name == "I").FirstOrDefault();
+                            var s = _context.SubjectSubs.Where(w => w.Name == "S").FirstOrDefault();
+
+                            var icnt = 0;
+                            var scnt = 0;
+                            var tsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.SubjectSub);
+                            foreach (var tsanswer in tsanswersubs)
+                            {
+                                if (tsanswer.SubjectSubID == i.ID)
+                                    icnt++;
+                                else if (tsanswer.SubjectSubID == s.ID)
+                                    scnt++;
+                            }
+
+                            var pointi = 0M;
+                            var points = 0M;
+                            var pointmaxi = 0M;
+                            var pointmaxs = 0M;
+                            var itsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.Point & w.Question.SubjectSubID == i.ID);
+                            foreach (var tsanswer in itsanswersubs)
+                            {
+                                pointi += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                pointmaxi += tsanswer.Question.MaxPoint.HasValue ? tsanswer.Question.MaxPoint.Value : 0;
+                            }
+
+                            var stsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.Point & w.Question.SubjectSubID == s.ID);
+                            foreach (var tsanswer in stsanswersubs)
+                            {
+                                points += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                pointmaxs += tsanswer.Question.MaxPoint.HasValue ? tsanswer.Question.MaxPoint.Value : 0;
+                            }
+
+                            var percenti = pointmaxi > 0 ? (pointi * 100) / pointmaxi : 0;
+                            var percents = pointmaxi > 0 ? (points * 100) / pointmaxs : 0;
+
+                            if (percenti >= 70)
+                            {
+                                worksheet.Cells[row, col].Value = 3; col++;
+                            }
+                            else
+                            {
+                                worksheet.Cells[row, col].Value =1; col++;
+                            }
+
+                            if (percents >= 70)
+                            {
+                                worksheet.Cells[row, col].Value = 3; col++;
+                            }
+                            else
+                            {
+                                worksheet.Cells[row, col].Value =1; col++;
+                            }
+                            if (icnt > scnt)
+                            {
+                                worksheet.Cells[row, col].Value = 1; col++;
+
+                            }
+                            else if (scnt > icnt)
+                            {
+                                worksheet.Cells[row, col].Value = 3; col++;
+                            }
+                            else
+                            {
+                                if (percents > percenti)
+                                {
+                                    worksheet.Cells[row, col].Value = 3; col++;
+                                }
+                                else
+                                {
+                                    worksheet.Cells[row, col].Value = 1; col++;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var subs = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).OrderBy(o => o.Order);
+                            foreach (var sub in subs)
+                            {
+                                if (subject.Name == "G")
+                                {
+                                    if (setupg != null)
+                                    {
+                                        var subtype1cnt = 0;
+                                        var subtype2cnt = 0;
+                                        var subtype3cnt = 0;
+                                        var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+
+                                        foreach (var tsanswer in tsanswersubs)
+                                        {
+                                            if (tsanswer.Point == setupg.Type1Point)
+                                                subtype1cnt += 1;
+                                            else if (tsanswer.Point == setupg.Type2Point)
+                                                subtype2cnt += 1;
+                                            else if (tsanswer.Point == setupg.Type3Point)
+                                                subtype3cnt += 1;
+
+                                            if (tsanswer.Point == setupg.Type1Point)
+                                                type1cnt += 1;
+                                            else if (tsanswer.Point == setupg.Type2Point)
+                                                type2cnt += 1;
+                                            else if (tsanswer.Point == setupg.Type3Point)
+                                                type3cnt += 1;
+                                        }
+                                        var percent = (subtype3cnt * 100) / tsanswersubs.Count();
+                                        if (tsanswersubs.Count() > 0 && percent >= setupg.PercentBySubjectSub)
+                                        {
+                                            worksheet.Cells[row, col].Value = 3; col++;
+                                        }
+                                        else
+                                        {
+                                            worksheet.Cells[row, col].Value =1; col++;
+                                        }
+                                    }
+                                }
+                                else if (subject.Name == "E")
+                                {
+                                    if (setupe != null)
+                                    {
+                                        var point = 0M;
+                                        var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                        foreach (var tsanswer in tsanswersubs)
+                                        {
+                                            point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                        }
+                                        var max = tsanswersubs.Count() * setupe.MaxPoint;
+
+                                        var percent = max > 0 ? (point * 100) / max : 0;
+                                        if (percent >= setupe.PercentHigh)
+                                        {
+                                            worksheet.Cells[row, col].Value = 3; col++;
+                                        }
+                                        else if (percent >= setupe.PercentMid)
+                                        {
+                                            worksheet.Cells[row, col].Value = 2; col++;
+                                        }
+                                        else
+                                        {
+                                            worksheet.Cells[row, col].Value =1; col++;
+                                        }
+                                    }
+                                }
+                                else if (subject.Name == "A")
+                                {
+                                    if (setupa != null)
+                                    {
+                                        var point = 0M;
+                                        var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                        foreach (var tsanswer in tsanswersubs)
+                                        {
+                                            point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                        }
+                                        var max = tsanswersubs.Count() * setupa.MaxPoint;
+
+                                        var percent = max > 0 ? (point * 100) / max : 0;
+                                        if (percent > setupa.PercentType3)
+                                        {
+                                            worksheet.Cells[row, col].Value = 3; col++;
+                                        }
+                                        else if (percent > setupa.PercentType2)
+                                        {
+                                            worksheet.Cells[row, col].Value = 2; col++;
+                                        }
+                                        else
+                                        {
+                                            worksheet.Cells[row, col].Value =1; col++;
+                                        }
+                                    }
+                                }
+                                else if (subject.Name == "T")
+                                {
+                                    if (setupt != null)
+                                    {
+                                        var point = 0M;
+                                        var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                        foreach (var tsanswer in tsanswersubs)
+                                        {
+                                            point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                        }
+                                        var max = tsanswersubs.Count() * setupt.MaxPoint;
+
+                                        var percent = max > 0 ? (point * 100) / max : 0;
+                                        if (percent > setupt.PercentType3)
+                                        {
+                                            worksheet.Cells[row, col].Value = 3; col++;
+                                        }
+                                        else if (percent > setupt.PercentType2)
+                                        {
+                                            worksheet.Cells[row, col].Value = 2; col++;
+                                        }
+                                        else
+                                        {
+                                            worksheet.Cells[row, col].Value =1; col++;
+                                        }
+                                    }
+                                }
+                                else if (subject.Name == "S")
+                                {
+                                    if (setups != null)
+                                    {
+                                        var point0cnt = 0M;
+                                        var point1cnt = 0M;
+                                        var point2cnt = 0M;
+                                        var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                        foreach (var tsanswer in tsanswersubs)
+                                        {
+                                            var point = tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                            if (point == 0)
+                                                point0cnt += 1;
+                                            else if (point == 1)
+                                                point1cnt += 1;
+                                            else if (point == 2)
+                                                point2cnt += 1;
+                                        }
+                                        if (point2cnt >= point1cnt && point2cnt >= point0cnt)
+                                        {
+                                            worksheet.Cells[row, col].Value = 3; col++;
+                                        }
+                                        else if (point1cnt >= point0cnt)
+                                        {
+                                            worksheet.Cells[row, col].Value = 2; col++;
+                                        }
+                                        else
+                                        {
+                                            worksheet.Cells[row, col].Value =1; col++;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    worksheet.Cells[row, col].Value = ""; col++;
+                                }
+
+                            }
+                        }
+
+                    }
+                    worksheet.Cells[row, col].Value = DateUtil.ToDisplayDate(list.ExamDate); col++;
+                    worksheet.Cells[row, col].Value = DateUtil.ToDisplayDate(list.ExamDate.AddYears(2)); col++;
+                    col = 1;
+                    row++;
+                }
+                var modelTable = worksheet.Cells;
+                modelTable.AutoFitColumns();
+                // calculate
+                worksheet.Calculate();
+
+                var filename = filePath;
+                filePath = filePath.Replace("\\", "/");
+                package.SaveAs(new FileInfo(filePath));
+                if (System.IO.File.Exists(filename))
+                {
+                    var memory = new MemoryStream();
+                    using (var stream = new FileStream(filename, FileMode.Open))
+                    {
+                        await stream.CopyToAsync(memory);
+                    }
+                    memory.Position = 0;
+                    var mimeType = "application/vnd.ms-excel";
+                    return File(memory, mimeType, Path.GetFileName(filename));
+                }
+            }
+            return CreatedAtAction(nameof(exambymonth), new { result = ResultCode.DataHasNotFound, message = ResultMessage.DataHasNotFound });
 
         }
 
@@ -1875,9 +2445,848 @@ namespace tuexamapi.Controllers
         }
 
         [HttpGet]
-        [Route("resultform")]
-        public void resultform(string student_search,string tsresult)
+        [Route("resultform2")]
+        public void resultform2(string search_date)
         {
+            if (string.IsNullOrEmpty(search_date))
+                search_date = DateUtil.ToDisplayDate(DateUtil.Now());
+            var webRootPath = _hostingEnvironment.WebRootPath;
+
+            this.HttpContext.Response.ContentType = "application/pdf";
+
+            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), -80f, -80f, 10f, 0f);
+            var htmlparser = new HTMLWorker(pdfDoc);
+            var writer = PdfWriter.GetInstance(pdfDoc, this.HttpContext.Response.Body);
+
+            PdfPageEvent pageevent = new PdfPageEvent();
+            pageevent.PrintTime = DateTime.Now;
+            pageevent.webRootPath = webRootPath;
+
+            writer.PageEvent = pageevent;
+            var pageSize = pdfDoc.PageSize;
+            var THSarabunNew = BaseFont.CreateFont(webRootPath + @"\fonts\THSarabunNew.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            var ARIALUNI = BaseFont.CreateFont(webRootPath + @"\fonts\ArialUnicodeMS.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font font = new Font(THSarabunNew, 13);
+            Font fontsmall = new Font(THSarabunNew, 10);
+            Font fontbig = new Font(THSarabunNew, 14);
+            Font fontbigblue = new Font(THSarabunNew, 14, Font.BOLD);
+            fontbigblue.Color = new BaseColor(69, 103, 184);
+            Font fontHeader = new Font(THSarabunNew, 35, Font.BOLD);
+            Font fontbold = new Font(THSarabunNew, 16, Font.BOLD);
+            Font fontuni = new Font(ARIALUNI, 25);
+            Font fontunismall = new Font(ARIALUNI, 12);
+            var totalwidth = pdfDoc.PageSize.Width;
+
+            pdfDoc.Open();
+
+            var date = DateUtil.ToDate(search_date);
+            var students = _context.TestResultStudents.Where(w => w.Start_On.Value.Date == date.Value.Date).OrderBy(o => o.Student.Faculty).ThenBy(o => o.Student.StudentCode).Select(s => s.StudentID).Distinct();
+
+            var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
+            var firstsubject = subjects.FirstOrDefault();
+            if (firstsubject == null)
+                return;
+
+            SubjectGSetup setupg = null;
+            SubjectESetup setupe = null;
+            SubjectASetup setupa = null;
+            SubjectTSetup setupt = null;
+            SubjectSSetup setups = null;
+            foreach (var subject in subjects)
+            {
+                if (subject.Name == "G")
+                    setupg = _context.SubjectGSetups.FirstOrDefault();
+                else if (subject.Name == "E")
+                    setupe = _context.SubjectESetups.FirstOrDefault();
+                else if (subject.Name == "A")
+                    setupa = _context.SubjectASetups.FirstOrDefault();
+                else if (subject.Name == "T")
+                    setupt = _context.SubjectTSetups.FirstOrDefault();
+                else if (subject.Name == "S")
+                    setups = _context.SubjectSSetups.FirstOrDefault();
+            }
+
+            var row = 0;
+            foreach (var studentid in students)
+            {
+                row++;
+                var student = _context.Students.Include(i => i.Faculty).Where(w => w.ID == studentid).FirstOrDefault();
+                if (student == null)
+                    return;
+
+                var tsresultsdefault = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.Exam.SubjectID == firstsubject.ID);
+
+                tsresultsdefault = tsresultsdefault.OrderByDescending(o => o.Exam.ExamDate);
+                var examdate = tsresultsdefault.OrderByDescending(o => o.Exam.ExamDate).Select(s => s.Exam.ExamDate).FirstOrDefault();
+                if (examdate == null)
+                    return;
+
+                #region start pdf
+                PdfPTable table = new PdfPTable(3);
+
+                // Header row
+                PdfPTable tableheader = new PdfPTable(8);
+                tableheader.SetWidthPercentage(new float[] {
+                (float)(0.1 * totalwidth) , //เลขทะเบียนนักศึกษา
+                (float)(0.075 * totalwidth) , //เลขทะเบียนนักศึกษา
+                (float)(0.04 * totalwidth) , //ชื่อ-สกุล
+                (float)(0.135 * totalwidth) , //ชื่อ-สกุล
+                (float)(0.03 * totalwidth) , //คณะ
+                (float)(0.15 * totalwidth) , // คณะ
+                (float)(0.27 * totalwidth) , // GRAETS
+                (float)(0.08 * totalwidth) // DATE
+            }, pdfDoc.PageSize);
+                var cell = new PdfPCell(new Phrase(12, "เลขทะเบียนนักศึกษา:", fontbig));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, student.StudentCode, fontbigblue));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, "ชื่อ-สกุล:", fontbig));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, student.Prefix.toPrefixName() + student.FirstName + " " + student.LastName, fontbigblue));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, "คณะ:", fontbig));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, student.Faculty != null ? student.Faculty.FacultyName : "", fontbigblue));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, "GREATS scores are valid for two years after the test date.", fontbig));
+                cell.PaddingBottom = 5;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayDate(examdate), fontbig));
+                cell.PaddingBottom = 5;
+                cell.HorizontalAlignment = Element.ALIGN_RIGHT;
+                cell.Border = 0;
+                tableheader.AddCell(cell);
+
+                cell = new PdfPCell(tableheader);
+                cell.Colspan = 3;
+                cell.Border = 0;
+                table.AddCell(cell);
+
+                // second row
+                foreach (var subject in subjects)
+                {
+                    var subs = _context.SubjectSubs.Where(w => w.Subject.Name == subject.Name).OrderBy(o => o.Order);
+                    var subremark = "";
+                    var desc = new StringBuilder();
+                    var subresult = "";
+                    var type1cnt = 0;
+                    var type2cnt = 0;
+                    var type3cnt = 0;
+
+                    PdfPTable tablesubject = new PdfPTable(subs.Count() + 1);
+                    var widths = new List<float>();
+                    widths.Add(0.17f * totalwidth);
+                    foreach (var sub in subs)
+                    {
+                        widths.Add((float)(0.83f / subs.Count()) * totalwidth);
+                    }
+                    tablesubject.SetWidthPercentage(widths.ToArray(), pdfDoc.PageSize);
+                    cell = new PdfPCell(new Phrase(subject.Name, fontHeader));
+                    cell.Padding = 5;
+                    cell.PaddingBottom = 5;
+                    cell.PaddingTop = -10;
+                    cell.Rowspan = 2;
+                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                    cell.UseAscender = true;
+                    tablesubject.AddCell(cell);
+
+                    var hasexam = false;
+
+                    var subsigns = new List<string>();
+                    foreach (var sub in subs)
+                    {
+                        var subsign = "\u25cb";
+                        subsigns.Add(subsign);
+                    }
+
+
+                    var tsresults = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.Exam.SubjectID == subject.ID);
+                    tsresults = tsresults.OrderByDescending(o => o.Exam.ExamDate);
+                    IQueryable<TestResultStudentQAns> tsanswers = null;
+                    if (tsresults.OrderByDescending(o => o.Exam.ExamDate).FirstOrDefault() != null)
+                    {
+                        tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tsresults.OrderByDescending(o => o.Exam.ExamDate).FirstOrDefault().ID);
+                        if (tsanswers != null || tsanswers.Count() > 0)
+                            hasexam = true;
+                    }
+
+                    if (hasexam == false)
+                    {
+                        foreach (var sub in subs)
+                        {
+                            cell = new PdfPCell(new Phrase(sub.Name, fontbold));
+                            cell.Padding = 5;
+                            cell.PaddingBottom = 5;
+                            cell.PaddingTop = 0;
+                            cell.FixedHeight = 25f;
+                            cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                            cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                            tablesubject.AddCell(cell);
+
+                            subremark += sub.Name + ": " + sub.Description + " ";
+                        }
+                        var subindex = 0;
+                        foreach (var sub in subs)
+                        {
+                            cell = new PdfPCell(new Phrase(subsigns[subindex], fontuni));
+                            cell.Padding = 5;
+                            cell.PaddingBottom = 2;
+                            cell.PaddingTop = -2;
+                            cell.FixedHeight = 25f;
+                            cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                            cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                            tablesubject.AddCell(cell);
+                            subindex++;
+                        }
+                        cell = new PdfPCell(new Phrase(desc.ToString(), font));
+                        cell.Padding = 5;
+                        cell.Colspan = 6;
+                        cell.BorderWidthBottom = 0;
+                        cell.FixedHeight = 172f;
+                        tablesubject.AddCell(cell);
+
+                        if (!string.IsNullOrEmpty(subject.Description))
+                        {
+                            cell = new PdfPCell(new Phrase(subject.Description, font));
+                            cell.Padding = 5;
+                            cell.PaddingTop = 0;
+                            cell.Colspan = 6;
+                            cell.PaddingTop = 0;
+                            cell.BorderWidthTop = 0;
+                            cell.BorderWidthBottom = 0;
+                            tablesubject.AddCell(cell);
+
+                            cell = new PdfPCell(new Phrase(subremark, fontsmall));
+                            cell.Padding = 5;
+                            cell.Colspan = 6;
+                            cell.PaddingTop = 0;
+                            cell.BorderWidthTop = 0;
+                            cell.FixedHeight = 27f;
+                            tablesubject.AddCell(cell);
+                        }
+                        cell = new PdfPCell(tablesubject);
+                        table.AddCell(cell);
+                        continue;
+                    }
+
+                    foreach (var sub in subs)
+                    {
+                        cell = new PdfPCell(new Phrase(sub.Name, fontbold));
+                        cell.Padding = 5;
+                        cell.PaddingBottom = 5;
+                        cell.PaddingTop = 0;
+                        cell.FixedHeight = 25f;
+                        cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                        cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                        tablesubject.AddCell(cell);
+
+                        subremark += sub.Name + ": " + sub.Description + " ";
+                    }
+
+                    if (subject.Name == "R")
+                    {
+                        var subindex = 0;
+                        var i = _context.SubjectSubs.Where(w => w.Name == "I").FirstOrDefault();
+                        var s = _context.SubjectSubs.Where(w => w.Name == "S").FirstOrDefault();
+
+                        var icnt = 0;
+                        var scnt = 0;
+                        var tsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.SubjectSub);
+                        foreach (var tsanswer in tsanswersubs)
+                        {
+                            if (tsanswer.SubjectSubID == i.ID)
+                                icnt++;
+                            else if (tsanswer.SubjectSubID == s.ID)
+                                scnt++;
+                        }
+
+                        var pointi = 0M;
+                        var points = 0M;
+                        var pointmaxi = 0M;
+                        var pointmaxs = 0M;
+                        var itsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.Point & w.Question.SubjectSubID == i.ID);
+                        foreach (var tsanswer in itsanswersubs)
+                        {
+                            pointi += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                            pointmaxi += tsanswer.Question.MaxPoint.HasValue ? tsanswer.Question.MaxPoint.Value : 0;
+                        }
+
+                        var stsanswersubs = tsanswers.Where(w => w.Question.AnswerType == AnswerType.Point & w.Question.SubjectSubID == s.ID);
+                        foreach (var tsanswer in stsanswersubs)
+                        {
+                            points += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                            pointmaxs += tsanswer.Question.MaxPoint.HasValue ? tsanswer.Question.MaxPoint.Value : 0;
+                        }
+
+                        var percenti = pointmaxi > 0 ? (pointi * 100) / pointmaxi : 0;
+                        var percents = pointmaxi > 0 ? (points * 100) / pointmaxs : 0;
+
+                        if (percenti < 70 & percents < 70)
+                        {
+                            var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == null).FirstOrDefault();
+                            if (setup != null)
+                                desc.AppendLine("      " + setup.Description);
+                        }
+                        else if (percenti > 70 & percents < 70)
+                        {
+                            if (icnt < scnt)
+                            {
+                                // R2
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                            else
+                            {
+                                // R1
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                        }
+                        else if (percenti < 70 & percents > 70)
+                        {
+                            if (icnt < scnt)
+                            {
+                                // R2
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                            else
+                            {
+                                // R1
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                        }
+                        else if (percenti > 70 & percents > 70)
+                        {
+                            if (icnt < scnt)
+                            {
+                                // R2
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                            else
+                            {
+                                // R1
+                                var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
+                                if (setup != null)
+                                    desc.AppendLine("      " + setup.Description);
+                            }
+                        }
+
+                        if (percenti >= 70)
+                        {
+                            subsigns[subindex] = "\u25CF"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                        }
+                        else
+                        {
+                            subsigns[subindex] = "\u25cb"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                        }
+
+
+                        cell.Padding = 5;
+                        cell.PaddingBottom = 2;
+                        cell.PaddingTop = -2;
+                        cell.FixedHeight = 25f;
+                        cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                        cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                        tablesubject.AddCell(cell);
+
+                        if (percents >= 70)
+                        {
+                            subsigns[subindex] = "\u25CF"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                        }
+                        else
+                        {
+                            subsigns[subindex] = "\u25cb"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                        }
+
+                        cell.Padding = 5;
+                        cell.PaddingBottom = 2;
+                        cell.PaddingTop = -2;
+                        cell.FixedHeight = 25f;
+                        cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                        cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                        tablesubject.AddCell(cell);
+
+
+                        if (icnt > scnt)
+                        {
+                            subsigns[subindex] = "\u25cb"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+
+                        }
+                        else if (scnt > icnt)
+                        {
+                            subsigns[subindex] = "\u25CF"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                        }
+                        else
+                        {
+                            if (percents > percenti)
+                            {
+                                subsigns[subindex] = "\u25CF"; subindex++;
+                                cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                            }
+                            else
+                            {
+                                subsigns[subindex] = "\u25cb"; subindex++;
+                                cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                            }
+                        }
+
+                        cell.Padding = 5;
+                        cell.PaddingBottom = 2;
+                        cell.PaddingTop = -2;
+                        cell.FixedHeight = 25f;
+                        cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                        cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                        tablesubject.AddCell(cell);
+                    }
+                    else
+                    {
+                        var subindex = 0;
+                        foreach (var sub in subs)
+                        {
+                            if (subject.Name == "G")
+                            {
+                                if (setupg != null)
+                                {
+                                    var subtype1cnt = 0;
+                                    var subtype2cnt = 0;
+                                    var subtype3cnt = 0;
+                                    var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+
+                                    foreach (var tsanswer in tsanswersubs)
+                                    {
+                                        if (tsanswer.Point == setupg.Type1Point)
+                                            subtype1cnt += 1;
+                                        else if (tsanswer.Point == setupg.Type2Point)
+                                            subtype2cnt += 1;
+                                        else if (tsanswer.Point == setupg.Type3Point)
+                                            subtype3cnt += 1;
+
+                                        if (tsanswer.Point == setupg.Type1Point)
+                                            type1cnt += 1;
+                                        else if (tsanswer.Point == setupg.Type2Point)
+                                            type2cnt += 1;
+                                        else if (tsanswer.Point == setupg.Type3Point)
+                                            type3cnt += 1;
+                                    }
+                                    var percent = (subtype3cnt * 100) / tsanswersubs.Count();
+                                    if (tsanswersubs.Count() > 0 && percent >= setupg.PercentBySubjectSub)
+                                    {
+                                        subresult += sub.Name + ",";
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
+                                    }
+                                    else
+                                    {
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                                    }
+
+                                    cell.Padding = 5;
+                                    cell.PaddingBottom = 2;
+                                    cell.PaddingTop = -2;
+                                    cell.FixedHeight = 25f;
+                                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                    tablesubject.AddCell(cell);
+                                }
+                            }
+                            else if (subject.Name == "E")
+                            {
+                                if (setupe != null)
+                                {
+                                    var point = 0M;
+                                    var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                    foreach (var tsanswer in tsanswersubs)
+                                    {
+                                        point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                    }
+                                    var max = tsanswersubs.Count() * setupe.MaxPoint;
+
+                                    var percent = max > 0 ? (point * 100) / max : 0;
+                                    if (percent >= setupe.PercentHigh)
+                                    {
+                                        subsigns[subindex] = "\u25CF";
+                                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
+                                    }
+                                    else if (percent >= setupe.PercentMid)
+                                    {
+                                        subsigns[subindex] = "\u25d0";
+                                        cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
+                                    }
+                                    else
+                                    {
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                                    }
+
+
+                                    if (percent >= setupe.PercentType3)
+                                        desc.AppendLine("      " + setupe.DescriptionType3);
+                                    else if (percent >= setupe.PercentType2)
+                                        desc.AppendLine("      " + setupe.DescriptionType2);
+                                    else
+                                        desc.AppendLine("      " + setupe.DescriptionType1);
+
+                                    cell.Padding = 5;
+                                    cell.PaddingBottom = 2;
+                                    cell.PaddingTop = -2;
+                                    cell.FixedHeight = 25f;
+                                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                    tablesubject.AddCell(cell);
+                                }
+                            }
+                            else if (subject.Name == "A")
+                            {
+                                if (setupa != null)
+                                {
+                                    var point = 0M;
+                                    var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                    foreach (var tsanswer in tsanswersubs)
+                                    {
+                                        point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                    }
+                                    var max = tsanswersubs.Count() * setupa.MaxPoint;
+
+                                    var percent = max > 0 ? (point * 100) / max : 0;
+                                    if (percent > setupa.PercentType3)
+                                    {
+                                        subsigns[subindex] = "\u25CF";
+                                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
+                                    }
+                                    else if (percent > setupa.PercentType2)
+                                    {
+                                        subsigns[subindex] = "\u25d0";
+                                        cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
+                                    }
+                                    else
+                                    {
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                                    }
+
+                                    if (percent > setupa.PercentType3)
+                                        desc.AppendLine("      " + setupa.DescriptionType3);
+                                    else if (percent > setupa.PercentType2)
+                                        desc.AppendLine("      " + setupa.DescriptionType2);
+                                    else
+                                        desc.AppendLine("      " + setupa.DescriptionType1);
+
+                                    cell.Padding = 5;
+                                    cell.PaddingBottom = 2;
+                                    cell.PaddingTop = -2;
+                                    cell.FixedHeight = 25f;
+                                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                    tablesubject.AddCell(cell);
+                                }
+                            }
+                            else if (subject.Name == "T")
+                            {
+                                if (setupt != null)
+                                {
+                                    var point = 0M;
+                                    var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                    foreach (var tsanswer in tsanswersubs)
+                                    {
+                                        point += tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                    }
+                                    var max = tsanswersubs.Count() * setupt.MaxPoint;
+
+                                    var percent = max > 0 ? (point * 100) / max : 0;
+                                    if (percent > setupt.PercentType3)
+                                    {
+                                        subsigns[subindex] = "\u25CF";
+                                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
+                                    }
+                                    else if (percent > setupt.PercentType2)
+                                    {
+                                        subsigns[subindex] = "\u25d0";
+                                        cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
+                                    }
+                                    else
+                                    {
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                                    }
+                                    if (percent > setupt.PercentType3)
+                                        desc.AppendLine("      " + setupt.DescriptionType3);
+                                    else if (percent > setupt.PercentType2)
+                                        desc.AppendLine("      " + setupt.DescriptionType2);
+                                    else
+                                        desc.AppendLine("      " + setupt.DescriptionType1);
+
+                                    cell.Padding = 5;
+                                    cell.PaddingBottom = 2;
+                                    cell.PaddingTop = -2;
+                                    cell.FixedHeight = 25f;
+                                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                    tablesubject.AddCell(cell);
+                                }
+                            }
+                            else if (subject.Name == "S")
+                            {
+                                if (setups != null)
+                                {
+                                    var point0cnt = 0M;
+                                    var point1cnt = 0M;
+                                    var point2cnt = 0M;
+                                    var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
+                                    foreach (var tsanswer in tsanswersubs)
+                                    {
+                                        var point = tsanswer.Point.HasValue ? tsanswer.Point.Value : 0;
+                                        if (point == 0)
+                                            point0cnt += 1;
+                                        else if (point == 1)
+                                            point1cnt += 1;
+                                        else if (point == 2)
+                                            point2cnt += 1;
+                                    }
+                                    if (point2cnt >= point1cnt && point2cnt >= point0cnt)
+                                    {
+                                        subsigns[subindex] = "\u25CF";
+                                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
+                                        desc.AppendLine("      " + setups.DescriptionType3);
+                                    }
+                                    else if (point1cnt >= point0cnt)
+                                    {
+                                        subsigns[subindex] = "\u25d0";
+                                        cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
+                                        desc.AppendLine("      " + setups.DescriptionType2);
+                                    }
+                                    else
+                                    {
+                                        subsigns[subindex] = "\u25cb";
+                                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                                        desc.AppendLine("      " + setups.DescriptionType1);
+                                    }
+
+                                    cell.Padding = 5;
+                                    cell.PaddingBottom = 2;
+                                    cell.PaddingTop = -2;
+                                    cell.FixedHeight = 25f;
+                                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                    cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                    tablesubject.AddCell(cell);
+                                }
+                            }
+                            else
+                            {
+                                subsigns[subindex] = "\u25d0";
+                                cell = new PdfPCell(new Phrase("\u25d0", fontuni)); // half
+                                cell.Padding = 5;
+                                cell.PaddingBottom = 2;
+                                cell.PaddingTop = -2;
+                                cell.FixedHeight = 25f;
+                                cell.HorizontalAlignment = Element.ALIGN_CENTER;
+                                cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+                                tablesubject.AddCell(cell);
+                            }
+                            subindex++;
+                        }
+                    }
+
+                    if (subject.Name == "G")
+                    {
+                        if ((type3cnt * 100) / tsanswers.Count() >= setupg.PercentByType)
+                        {
+                            desc.AppendLine("      " + setupg.DescriptionType3);
+                            if (!string.IsNullOrEmpty(subresult))
+                            {
+                                if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                    subresult = subresult.Substring(0, subresult.Length - 1);
+                                desc.Append(" และสามารถปฎิบัติตามระเบียบปฎิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                            }
+                        }
+                        else if (type2cnt > type1cnt)
+                        {
+                            desc.AppendLine("      " + setupg.DescriptionType2);
+                            if (!string.IsNullOrEmpty(subresult))
+                            {
+                                if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                    subresult = subresult.Substring(0, (subresult.Length - 1));
+                                desc.Append(" อย่างไรก็ตามยอบรับที่จะปฏิบัติตามระเบียบปฏิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                            }
+                        }
+                        else
+                        {
+                            desc.AppendLine("      " + setupg.DescriptionType1);
+                            if (!string.IsNullOrEmpty(subresult))
+                            {
+                                if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                    subresult = subresult.Substring(0, subresult.Length - 1);
+                                desc.Append(" อย่างไรก็ตามยอบรับที่จะปฏิบัติตามระเบียบปฏิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                            }
+                        }
+                    }
+
+                    cell = new PdfPCell(new Phrase(desc.ToString(), font));
+                    cell.Padding = 5;
+                    cell.Colspan = 6;
+                    cell.BorderWidthBottom = 0;
+                    cell.FixedHeight = 172f;
+                    tablesubject.AddCell(cell);
+
+                    if (!string.IsNullOrEmpty(subject.Description))
+                    {
+                        cell = new PdfPCell(new Phrase(subject.Description, font));
+                        cell.Padding = 5;
+                        cell.PaddingTop = 0;
+                        cell.Colspan = 6;
+                        cell.PaddingTop = 0;
+                        cell.BorderWidthTop = 0;
+                        cell.BorderWidthBottom = 0;
+                        tablesubject.AddCell(cell);
+
+                        cell = new PdfPCell(new Phrase(subremark, fontsmall));
+                        cell.Padding = 5;
+                        cell.Colspan = 6;
+                        cell.PaddingTop = 0;
+                        cell.BorderWidthTop = 0;
+                        cell.FixedHeight = 27f;
+                        tablesubject.AddCell(cell);
+                    }
+
+
+                    cell = new PdfPCell(tablesubject);
+                    table.AddCell(cell);
+                }
+
+                PdfPTable tablefooter = new PdfPTable(8);
+                tablefooter.SetWidthPercentage(new float[] {
+                (float)(0.07 * totalwidth) , //Symbol definition
+                (float)(0.005 * totalwidth) , //u25d0
+                (float)(0.1 * totalwidth) , //= ระดับสมรรถณะ 1 (Level 1)
+                (float)(0.005 * totalwidth) , //u25d0
+                (float)(0.1 * totalwidth) , //= ระดับสมรรถณะ 2 (Level 2)
+                (float)(0.005 * totalwidth) , // u25d0
+                (float)(0.1 * totalwidth) , // = ระดับสมรรถณะ 3 (Level 3)
+                (float)(0.4 * totalwidth) // 
+            }, pdfDoc.PageSize);
+
+                cell = new PdfPCell(new Phrase(12, "Symbol definition:", fontsmall));
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase("\u25cb", fontunismall)); // half
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 1 (Level 1)", fontsmall));
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase("\u25d0", fontunismall)); // half
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 2 (Level 2)", fontsmall));
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase("\u25CF", fontunismall)); // half
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 3 (Level 3)", fontsmall));
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(new Phrase(12, "", fontsmall));
+                cell.PaddingBottom = 0;
+                cell.Border = 0;
+                tablefooter.AddCell(cell);
+
+                cell = new PdfPCell(tablefooter);
+                cell.Colspan = 3;
+                cell.Border = 0;
+                table.AddCell(cell);
+
+                pdfDoc.Add(table);
+
+                #endregion
+            }
+
+            pdfDoc.Close();
+
+
+            return;
+        }
+
+        [HttpGet]
+        [Route("resultform")]
+        public void resultform(string student_search, string tsresult)
+        {
+            var webRootPath = _hostingEnvironment.WebRootPath;
+
+            this.HttpContext.Response.ContentType = "application/pdf";
+
+            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), -80f, -80f, 10f, 0f);
+            var htmlparser = new HTMLWorker(pdfDoc);
+            var writer = PdfWriter.GetInstance(pdfDoc, this.HttpContext.Response.Body);
+
+            PdfPageEvent pageevent = new PdfPageEvent();
+            pageevent.PrintTime = DateTime.Now;
+            pageevent.webRootPath = webRootPath;
+
+            writer.PageEvent = pageevent;
+            var pageSize = pdfDoc.PageSize;
+            var THSarabunNew = BaseFont.CreateFont(webRootPath + @"\fonts\THSarabunNew.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            var ARIALUNI = BaseFont.CreateFont(webRootPath + @"\fonts\ArialUnicodeMS.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font font = new Font(THSarabunNew, 13);
+            Font fontsmall = new Font(THSarabunNew, 10);
+            Font fontbig = new Font(THSarabunNew, 14);
+            Font fontbigblue = new Font(THSarabunNew, 14, Font.BOLD);
+            fontbigblue.Color = new BaseColor(69, 103, 184);
+            Font fontHeader = new Font(THSarabunNew, 35, Font.BOLD);
+            Font fontbold = new Font(THSarabunNew, 16, Font.BOLD);
+            Font fontuni = new Font(ARIALUNI, 25);
+            Font fontunismall = new Font(ARIALUNI, 12);
+            var totalwidth = pdfDoc.PageSize.Width;
+
             var studentid = NumUtil.ParseInteger(student_search);
             if (studentid == 0)
                 return;
@@ -1892,85 +3301,73 @@ namespace tuexamapi.Controllers
             if (student == null)
                 return;
 
-            var webRootPath = _hostingEnvironment.WebRootPath;
-
-            this.HttpContext.Response.ContentType = "application/pdf";
-
-            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), -80f, -80f, 10f, 10f);
-            var htmlparser = new HTMLWorker(pdfDoc);
-            var writer = PdfWriter.GetInstance(pdfDoc, this.HttpContext.Response.Body);
-
-            PdfPageEvent pageevent = new PdfPageEvent();
-            pageevent.PrintTime = DateTime.Now;
-            pageevent.webRootPath = webRootPath;
-
-            writer.PageEvent = pageevent;
-            var pageSize = pdfDoc.PageSize;
-            var THSarabunNew = BaseFont.CreateFont(webRootPath + @"\fonts\THSarabunNew.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            var ARIALUNI = BaseFont.CreateFont(webRootPath + @"\fonts\ArialUnicodeMS.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-            Font font = new Font(THSarabunNew, 13);
-            Font fontsmall = new Font(THSarabunNew, 10);
-            Font fontbig = new Font(THSarabunNew, 16);
-            Font fontbigblue = new Font(THSarabunNew, 16, Font.BOLD);
-            fontbigblue.Color = new BaseColor(69, 103, 184);
-            Font fontHeader = new Font(THSarabunNew, 35, Font.BOLD);
-            Font fontbold = new Font(THSarabunNew, 16, Font.BOLD);
-            Font fontuni = new Font(ARIALUNI, 25);
-            var totalwidth = pdfDoc.PageSize.Width;
-
+            var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
+            var firstsubject = subjects.FirstOrDefault();
+            if (firstsubject == null)
+                return;
+            var tsresultsdefault = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.Exam.SubjectID == firstsubject.ID);
+            if (tsresultid != null && tsresultid.Length > 0)
+            {
+                tsresultsdefault = tsresultsdefault.Where(w => tsresultid.Contains(w.ID.ToString()));
+            }
+            tsresultsdefault = tsresultsdefault.OrderByDescending(o => o.Exam.ExamDate);
+            var examdate = tsresultsdefault.OrderByDescending(o => o.Exam.ExamDate).Select(s => s.Exam.ExamDate).FirstOrDefault();
+            if (examdate == null)
+                return;
             pdfDoc.Open();
 
+            #region start pdf
             PdfPTable table = new PdfPTable(3);
 
             // Header row
             PdfPTable tableheader = new PdfPTable(8);
             tableheader.SetWidthPercentage(new float[] {
-                (float)(0.15 * totalwidth) ,
-                (float)(0.2 * totalwidth) ,
-                (float)(0.07 * totalwidth) ,
-                (float)(0.23 * totalwidth) ,
-                (float)(0.05 * totalwidth) ,
-                (float)(0.3 * totalwidth) ,
-                (float)(0.1 * totalwidth) ,
-                (float)(0.1 * totalwidth)
+                (float)(0.1 * totalwidth) , //เลขทะเบียนนักศึกษา
+                (float)(0.075 * totalwidth) , //เลขทะเบียนนักศึกษา
+                (float)(0.04 * totalwidth) , //ชื่อ-สกุล
+                (float)(0.135 * totalwidth) , //ชื่อ-สกุล
+                (float)(0.03 * totalwidth) , //คณะ
+                (float)(0.15 * totalwidth) , // คณะ
+                (float)(0.27 * totalwidth) , // GRAETS
+                (float)(0.08 * totalwidth) // DATE
             }, pdfDoc.PageSize);
             var cell = new PdfPCell(new Phrase(12, "เลขทะเบียนนักศึกษา:", fontbig));
-            cell.PaddingBottom = 7;
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
             cell = new PdfPCell(new Phrase(12, student.StudentCode, fontbigblue));
-            cell.PaddingBottom = 7;
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
             cell = new PdfPCell(new Phrase(12, "ชื่อ-สกุล:", fontbig));
-            cell.PaddingBottom = 7;
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
             cell = new PdfPCell(new Phrase(12, student.Prefix.toPrefixName() + student.FirstName + " " + student.LastName, fontbigblue));
-            cell.PaddingBottom = 7;
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
             cell = new PdfPCell(new Phrase(12, "คณะ:", fontbig));
-            cell.PaddingBottom = 7;
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
-            cell = new PdfPCell(new Phrase(12, student.Faculty.FacultyName, fontbigblue));
-            cell.PaddingBottom = 7;
+            cell = new PdfPCell(new Phrase(12, student.Faculty != null ? student.Faculty.FacultyName : "", fontbigblue));
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
-            cell = new PdfPCell(new Phrase(12, "Pre-Test", fontsmall));
-            cell.PaddingBottom = 7;
+            cell = new PdfPCell(new Phrase(12, "GREATS scores are valid for two years after the test date.", fontbig));
+            cell.PaddingBottom = 5;
             cell.Border = 0;
             tableheader.AddCell(cell);
 
-            cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayDateTime(DateUtil.Now()), fontsmall));
-            cell.PaddingBottom = 7;
+            cell = new PdfPCell(new Phrase(12, DateUtil.ToDisplayDate(examdate), fontbig));
+            cell.PaddingBottom = 5;
             cell.HorizontalAlignment = Element.ALIGN_RIGHT;
             cell.Border = 0;
             tableheader.AddCell(cell);
@@ -1981,10 +3378,9 @@ namespace tuexamapi.Controllers
             table.AddCell(cell);
 
             // second row
-            var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
             foreach (var subject in subjects)
             {
-                var subs = _context.SubjectSubs.Where(w => w.Subject.Name == subject.Name).OrderBy(o=>o.Order);
+                var subs = _context.SubjectSubs.Where(w => w.Subject.Name == subject.Name).OrderBy(o => o.Order);
                 var subremark = "";
                 var desc = new StringBuilder();
                 var subresult = "";
@@ -2003,7 +3399,7 @@ namespace tuexamapi.Controllers
                 tablesubject.SetWidthPercentage(widths.ToArray(), pdfDoc.PageSize);
                 cell = new PdfPCell(new Phrase(subject.Name, fontHeader));
                 cell.Padding = 5;
-                cell.PaddingBottom = 7;
+                cell.PaddingBottom = 5;
                 cell.PaddingTop = -10;
                 cell.Rowspan = 2;
                 cell.HorizontalAlignment = Element.ALIGN_CENTER;
@@ -2022,10 +3418,11 @@ namespace tuexamapi.Controllers
 
 
                 var tsresults = _context.TestResultStudents.Where(w => w.StudentID == student.ID & w.Exam.SubjectID == subject.ID);
-                if(tsresultid != null && tsresultid.Length > 0){
+                if (tsresultid != null && tsresultid.Length > 0)
+                {
                     tsresults = tsresults.Where(w => tsresultid.Contains(w.ID.ToString()));
                 }
-
+                tsresults = tsresults.OrderByDescending(o => o.Exam.ExamDate);
                 IQueryable<TestResultStudentQAns> tsanswers = null;
                 if (tsresults.OrderByDescending(o => o.Exam.ExamDate).FirstOrDefault() != null)
                 {
@@ -2040,7 +3437,7 @@ namespace tuexamapi.Controllers
                     {
                         cell = new PdfPCell(new Phrase(sub.Name, fontbold));
                         cell.Padding = 5;
-                        cell.PaddingBottom = 7;
+                        cell.PaddingBottom = 5;
                         cell.PaddingTop = 0;
                         cell.FixedHeight = 25f;
                         cell.HorizontalAlignment = Element.ALIGN_CENTER;
@@ -2097,7 +3494,7 @@ namespace tuexamapi.Controllers
                 {
                     cell = new PdfPCell(new Phrase(sub.Name, fontbold));
                     cell.Padding = 5;
-                    cell.PaddingBottom = 7;
+                    cell.PaddingBottom = 5;
                     cell.PaddingTop = 0;
                     cell.FixedHeight = 25f;
                     cell.HorizontalAlignment = Element.ALIGN_CENTER;
@@ -2149,7 +3546,7 @@ namespace tuexamapi.Controllers
                     {
                         var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == null).FirstOrDefault();
                         if (setup != null)
-                            desc.AppendLine("   " + setup.Description);
+                            desc.AppendLine("      " + setup.Description);
                     }
                     else if (percenti > 70 & percents < 70)
                     {
@@ -2158,14 +3555,14 @@ namespace tuexamapi.Controllers
                             // R2
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                         else
                         {
                             // R1
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == false & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                     }
                     else if (percenti < 70 & percents > 70)
@@ -2175,14 +3572,14 @@ namespace tuexamapi.Controllers
                             // R2
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                         else
                         {
                             // R1
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == false & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                     }
                     else if (percenti > 70 & percents > 70)
@@ -2192,27 +3589,27 @@ namespace tuexamapi.Controllers
                             // R2
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == s.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                         else
                         {
                             // R1
                             var setup = _context.SubjectRSetups.Where(w => w.Sub1MoreThanPercent == true & w.Sub2MoreThanPercent == true & w.SubjectSubfromPart1ID == i.ID).FirstOrDefault();
                             if (setup != null)
-                                desc.AppendLine("   " + setup.Description);
+                                desc.AppendLine("      " + setup.Description);
                         }
                     }
                     if (percenti >= 70)
                     {
                         subsigns[subindex] = "\u25CF"; subindex++;
-                         cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                        cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
                     }
                     else
                     {
                         subsigns[subindex] = "\u25cb"; subindex++;
                         cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
                     }
-                        
+
 
                     cell.Padding = 5;
                     cell.PaddingBottom = 2;
@@ -2232,7 +3629,7 @@ namespace tuexamapi.Controllers
                         subsigns[subindex] = "\u25cb"; subindex++;
                         cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
                     }
-                        
+
                     cell.Padding = 5;
                     cell.PaddingBottom = 2;
                     cell.PaddingTop = -2;
@@ -2241,15 +3638,29 @@ namespace tuexamapi.Controllers
                     cell.VerticalAlignment = Element.ALIGN_MIDDLE;
                     tablesubject.AddCell(cell);
 
-                    if (percents > percenti)
+                    if (icnt > scnt )
+                    {
+                        subsigns[subindex] = "\u25cb"; subindex++;
+                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                        
+                    }
+                    else if (scnt > icnt)
                     {
                         subsigns[subindex] = "\u25CF"; subindex++;
                         cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
                     }
                     else
                     {
-                        subsigns[subindex] = "\u25cb"; subindex++;
-                        cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                        if(percents > percenti)
+                        {
+                            subsigns[subindex] = "\u25CF"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
+                        }
+                        else
+                        {
+                            subsigns[subindex] = "\u25cb"; subindex++;
+                            cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
+                        }
                     }
 
                     cell.Padding = 5;
@@ -2274,6 +3685,7 @@ namespace tuexamapi.Controllers
                                 var subtype3cnt = 0;
                                 var tsanswersubs = tsanswers.Where(w => w.Question.SubjectSubID == sub.ID);
 
+
                                 foreach (var tsanswer in tsanswersubs)
                                 {
                                     if (tsanswer.Point == setupg.Type1Point)
@@ -2290,9 +3702,10 @@ namespace tuexamapi.Controllers
                                     else if (tsanswer.Point == setupg.Type3Point)
                                         type3cnt += 1;
                                 }
-                                if (tsanswersubs.Count() > 0 && (subtype3cnt * 100) / tsanswersubs.Count() >= setupg.PercentBySubjectSub)
+                                var percent = (subtype3cnt * 100) / tsanswersubs.Count();
+                                if (tsanswersubs.Count() > 0 && percent >= setupg.PercentBySubjectSub)
                                 {
-                                    subresult += sub.Name;
+                                    subresult += sub.Name + ",";
                                     subsigns[subindex] = "\u25cb";
                                     cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
                                 }
@@ -2330,23 +3743,24 @@ namespace tuexamapi.Controllers
                                     subsigns[subindex] = "\u25CF";
                                     cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
                                 }
-                                else if (percent >= setup.PercentMid) {
+                                else if (percent >= setup.PercentMid)
+                                {
                                     subsigns[subindex] = "\u25d0";
-                                    cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //black
+                                    cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
                                 }
                                 else
                                 {
                                     subsigns[subindex] = "\u25cb";
                                     cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
                                 }
-                                    
+
 
                                 if (percent >= setup.PercentType3)
-                                    desc.AppendLine("   " + setup.DescriptionType3);
+                                    desc.AppendLine("      " + setup.DescriptionType3);
                                 else if (percent >= setup.PercentType2)
-                                    desc.AppendLine("   " + setup.DescriptionType2);
+                                    desc.AppendLine("      " + setup.DescriptionType2);
                                 else
-                                    desc.AppendLine("   " + setup.DescriptionType1);
+                                    desc.AppendLine("      " + setup.DescriptionType1);
 
                                 cell.Padding = 5;
                                 cell.PaddingBottom = 2;
@@ -2370,16 +3784,16 @@ namespace tuexamapi.Controllers
                                 }
                                 var max = tsanswersubs.Count() * setup.MaxPoint;
 
-                                var percent = max > 0 ?  (point * 100) / max : 0;
-                                if (percent >= setup.PercentType3)
+                                var percent = max > 0 ? (point * 100) / max : 0;
+                                if (percent > setup.PercentType3)
                                 {
                                     subsigns[subindex] = "\u25CF";
                                     cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
                                 }
-                                else if (percent >= setup.PercentType2)
+                                else if (percent > setup.PercentType2)
                                 {
                                     subsigns[subindex] = "\u25d0";
-                                    cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //black
+                                    cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
                                 }
                                 else
                                 {
@@ -2387,12 +3801,12 @@ namespace tuexamapi.Controllers
                                     cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
                                 }
 
-                                if (percent >= setup.PercentType3)
-                                    desc.AppendLine("   " + setup.DescriptionType3);
-                                else if (percent >= setup.PercentType2)
-                                    desc.AppendLine("   " + setup.DescriptionType2);
+                                if (percent > setup.PercentType3)
+                                    desc.AppendLine("      " + setup.DescriptionType3);
+                                else if (percent > setup.PercentType2)
+                                    desc.AppendLine("      " + setup.DescriptionType2);
                                 else
-                                    desc.AppendLine("   " + setup.DescriptionType1);
+                                    desc.AppendLine("      " + setup.DescriptionType1);
 
                                 cell.Padding = 5;
                                 cell.PaddingBottom = 2;
@@ -2417,12 +3831,12 @@ namespace tuexamapi.Controllers
                                 var max = tsanswersubs.Count() * setup.MaxPoint;
 
                                 var percent = max > 0 ? (point * 100) / max : 0;
-                                if (percent >= setup.PercentType3)
+                                if (percent > setup.PercentType3)
                                 {
                                     subsigns[subindex] = "\u25CF";
                                     cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
                                 }
-                                else if (percent >= setup.PercentType2)
+                                else if (percent > setup.PercentType2)
                                 {
                                     subsigns[subindex] = "\u25d0";
                                     cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
@@ -2432,12 +3846,12 @@ namespace tuexamapi.Controllers
                                     subsigns[subindex] = "\u25cb";
                                     cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
                                 }
-                                if (percent >= setup.PercentType3)
-                                    desc.AppendLine("   " + setup.DescriptionType3);
-                                else if (percent >= setup.PercentType2)
-                                    desc.AppendLine("   " + setup.DescriptionType2);
+                                if (percent > setup.PercentType3)
+                                    desc.AppendLine("      " + setup.DescriptionType3);
+                                else if (percent > setup.PercentType2)
+                                    desc.AppendLine("      " + setup.DescriptionType2);
                                 else
-                                    desc.AppendLine("   " + setup.DescriptionType1);
+                                    desc.AppendLine("      " + setup.DescriptionType1);
 
                                 cell.Padding = 5;
                                 cell.PaddingBottom = 2;
@@ -2471,19 +3885,19 @@ namespace tuexamapi.Controllers
                                 {
                                     subsigns[subindex] = "\u25CF";
                                     cell = new PdfPCell(new Phrase("\u25CF", fontuni)); //black
-                                    desc.AppendLine("   " + setup.DescriptionType3);
+                                    desc.AppendLine("      " + setup.DescriptionType3);
                                 }
                                 else if (point1cnt >= point0cnt)
                                 {
                                     subsigns[subindex] = "\u25d0";
                                     cell = new PdfPCell(new Phrase("\u25d0", fontuni)); //half
-                                    desc.AppendLine("   " + setup.DescriptionType2);
+                                    desc.AppendLine("      " + setup.DescriptionType2);
                                 }
                                 else
                                 {
                                     subsigns[subindex] = "\u25cb";
                                     cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
-                                    desc.AppendLine("   " + setup.DescriptionType1);
+                                    desc.AppendLine("      " + setup.DescriptionType1);
                                 }
 
                                 cell.Padding = 5;
@@ -2514,14 +3928,35 @@ namespace tuexamapi.Controllers
                 if (subject.Name == "G")
                 {
                     if ((type3cnt * 100) / tsanswers.Count() >= setupg.PercentByType)
-                        desc.AppendLine("   " + setupg.DescriptionType3);
+                    {
+                        desc.AppendLine("      " + setupg.DescriptionType3);
+                        if (!string.IsNullOrEmpty(subresult))
+                        {
+                            if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                subresult = subresult.Substring(0, subresult.Length - 1);
+                            desc.Append(" และสามารถปฎิบัติตามระเบียบปฎิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                        }
+                    }
                     else if (type2cnt > type1cnt)
-                        desc.AppendLine("   " + setupg.DescriptionType2);
+                    {
+                        desc.AppendLine("      " + setupg.DescriptionType2);
+                        if (!string.IsNullOrEmpty(subresult))
+                        {
+                            if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                subresult = subresult.Substring(0, (subresult.Length - 1));
+                            desc.Append(" อย่างไรก็ตามยอบรับที่จะปฏิบัติตามระเบียบปฏิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                        }
+                    }
                     else
-                        desc.AppendLine("   " + setupg.DescriptionType1);
-
-                    if (!string.IsNullOrEmpty(subresult))
-                        desc.AppendLine("   และสามารถปฎิบัติตามระเบียบปฎิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                    {
+                        desc.AppendLine("      " + setupg.DescriptionType1);
+                        if (!string.IsNullOrEmpty(subresult))
+                        {
+                            if (subresult.Substring(subresult.Length - 1, 1) == ",")
+                                subresult = subresult.Substring(0, subresult.Length - 1);
+                            desc.Append(" อย่างไรก็ตามยอบรับที่จะปฏิบัติตามระเบียบปฏิบัติสากลในด้าน " + subresult + " ได้เป็นอย่างดี");
+                        }
+                    }
                 }
 
                 cell = new PdfPCell(new Phrase(desc.ToString(), font));
@@ -2555,8 +3990,69 @@ namespace tuexamapi.Controllers
                 cell = new PdfPCell(tablesubject);
                 table.AddCell(cell);
             }
+
+            PdfPTable tablefooter = new PdfPTable(8);
+            tablefooter.SetWidthPercentage(new float[] {
+                (float)(0.07 * totalwidth) , //Symbol definition
+                (float)(0.005 * totalwidth) , //u25d0
+                (float)(0.1 * totalwidth) , //= ระดับสมรรถณะ 1 (Level 1)
+                (float)(0.005 * totalwidth) , //u25d0
+                (float)(0.1 * totalwidth) , //= ระดับสมรรถณะ 2 (Level 2)
+                (float)(0.005 * totalwidth) , // u25d0
+                (float)(0.1 * totalwidth) , // = ระดับสมรรถณะ 3 (Level 3)
+                (float)(0.4 * totalwidth) // 
+            }, pdfDoc.PageSize);
+
+            cell = new PdfPCell(new Phrase(12, "Symbol definition:", fontsmall));
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase("\u25cb", fontunismall)); // half
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 1 (Level 1)", fontsmall));
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase("\u25d0", fontunismall)); // half
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 2 (Level 2)", fontsmall));
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase("\u25CF", fontunismall)); // half
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, " = ระดับสมรรถณะ 3 (Level 3)", fontsmall));
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(new Phrase(12, "", fontsmall));
+            cell.PaddingBottom = 0;
+            cell.Border = 0;
+            tablefooter.AddCell(cell);
+
+            cell = new PdfPCell(tablefooter);
+            cell.Colspan = 3;
+            cell.Border = 0;
+            table.AddCell(cell);
+
             pdfDoc.Add(table);
+
+            #endregion
             pdfDoc.Close();
+
 
             return;
         }
@@ -2732,6 +4228,69 @@ namespace tuexamapi.Controllers
 
         }
 
+        [HttpGet]
+        [Route("examanswer")]
+        public void examanswer(int? examid)
+        {
+            var lists = new List<RptExamAnswer>();
+
+            lists = Rpt.examanswer(_context, examid);
+
+            var webRootPath = _hostingEnvironment.WebRootPath;
+
+            this.HttpContext.Response.ContentType = "application/pdf";
+
+            var pdfDoc = new iTextSharp.text.Document(PageSize.A4.Rotate(), 0f, 0f, 40f, 40f);
+            var htmlparser = new HTMLWorker(pdfDoc);
+            var writer = PdfWriter.GetInstance(pdfDoc, this.HttpContext.Response.Body);
+
+            PdfPageEvent pageevent = new PdfPageEvent();
+            pageevent.PrintTime = DateTime.Now;
+            pageevent.webRootPath = webRootPath;
+
+            writer.PageEvent = pageevent;
+            var pageSize = pdfDoc.PageSize;
+            var THSarabunNew = BaseFont.CreateFont(webRootPath + @"\fonts\THSarabunNew.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font font = new Font(THSarabunNew, 14);
+            pdfDoc.Open();
+            var questioncnt = 0;
+            if (lists != null && lists.Count > 0)
+                questioncnt = lists[0].Answers.Count();
+
+            PdfPTable table = new PdfPTable(questioncnt + 1);
+            var cell = new PdfPCell(new Phrase(12, "รหัสนักศึกษา", font));
+            cell.Padding = 5;
+            cell.Border = 0;
+            table.AddCell(cell);
+
+            for (var i = 0; i < questioncnt; i++)
+            {
+                cell = new PdfPCell(new Phrase(12, (i + 1).ToString(), font));
+                cell.Padding = 5;
+                cell.Border = 0;
+                table.AddCell(cell);
+            }
+
+            foreach (var item in lists)
+            {
+                cell = new PdfPCell(new Phrase(12, item.StudentCode, font));
+                cell.Padding = 5;
+                table.AddCell(cell);
+                foreach (var answer in item.Answers)
+                {
+                    cell = new PdfPCell(new Phrase(12, answer.ToString(), font));
+                    cell.Padding = 5;
+                    table.AddCell(cell);
+                }
+            }
+
+            pdfDoc.Add(table);
+
+            pdfDoc.Close();
+            return;
+
+        }
+
     }
     public class RptExamStudent
     {
@@ -2840,6 +4399,13 @@ namespace tuexamapi.Controllers
         public string compare { get; set; }
         public decimal? r { get; set; }
         public string rtext { get; set; }
+
+    }
+
+    public class RptExamAnswer
+    {
+        public string StudentCode { get; set; }
+        public List<int> Answers { get; set; }
 
     }
 }

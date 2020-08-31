@@ -25,11 +25,9 @@ namespace tuexamapi.Models
         public bool CourseEn { get; set; }
 
         [Display(Name = "คำถาม(ไทย)")]
-        [MaxLength(1000)]
         public string QuestionTh { get; set; }
 
         [Display(Name = "คำถาม(อังกฤษ)")]
-        [MaxLength(1000)]
         public string QuestionEn { get; set; }
 
         [Display(Name = "ไฟล์")]
@@ -147,8 +145,12 @@ namespace tuexamapi.Models
         [Display(Name = "ลำดับ")]
         public int Order { get; set; }
 
-
+        [Display(Name = "No")]
+        public string No { get; set; }
         public virtual Question QuestionParent { get; set; }
+
+        [Display(Name = "สลับคำตอบ")]
+        public bool RandomChoice{ get; set; }
 
 
         [Display(Name = "ผู้สร้าง")]

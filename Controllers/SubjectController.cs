@@ -115,7 +115,7 @@ namespace tuexamapi.Controllers
         [Route("getsubject")]
         public object getsubject(int? id)
         {
-            var subject = _context.Subjects.Where(w => w.ID == id).Select(s => new
+            var subject = _context.Subjects.Include(i=>i.SubjectGroup).Where(w => w.ID == id).Select(s => new
             {
                 result = ResultCode.Success,
                 message = ResultMessage.Success,
@@ -124,7 +124,9 @@ namespace tuexamapi.Controllers
                 description = s.Description,
                 order = s.Order,
                 status = s.Status,
+                statusname = s.Status.toStatusName(),
                 groupid = s.SubjectGroupID,
+                group = s.SubjectGroup.Name,
                 create_on = DateUtil.ToDisplayDateTime(s.Create_On),
                 create_by = s.Create_By,
                 update_on = DateUtil.ToDisplayDateTime(s.Update_On),

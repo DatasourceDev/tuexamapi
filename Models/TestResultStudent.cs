@@ -97,6 +97,10 @@ namespace tuexamapi.Models
         [Display(Name = "อื่นๆ")]
         public bool Other { get; set; }
 
+        [Display(Name = "ข้อความ")]
+        [MaxLength(500)]
+        public string Description { get; set; }
+
         [Display(Name = "อีเมล")]
         [MaxLength(250)]
         public string Email { get; set; }
