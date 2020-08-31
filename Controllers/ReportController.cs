@@ -2480,7 +2480,7 @@ namespace tuexamapi.Controllers
             pdfDoc.Open();
 
             var date = DateUtil.ToDate(search_date);
-            var students = _context.TestResultStudents.Where(w => w.Start_On.Value.Date == date.Value.Date).OrderBy(o => o.Student.Faculty).ThenBy(o => o.Student.StudentCode).Select(s => s.StudentID).Distinct();
+            var students = _context.TestResultStudents.Where(w => w.Exam.ExamDate.Value.Date == date.Value.Date).OrderBy(o => o.Student.Faculty).ThenBy(o => o.Student.StudentCode).Select(s => s.StudentID).Distinct();
 
             var subjects = _context.Subjects.Where(w => w.SubjectGroup.Name == "GREATS").OrderBy(o => o.Order);
             var firstsubject = subjects.FirstOrDefault();
