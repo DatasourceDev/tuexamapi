@@ -1571,6 +1571,16 @@ namespace tuexamapi.Controllers
                         if (tsanswers == null || tsanswers.Count() == 0)
                             continue;
 
+                        var answeredcnt = tsanswers.Where(w => w.Answered == true).Count();
+                        if (answeredcnt == 0)
+                        {
+                            var subs = _context.SubjectSubs.Where(w => w.SubjectID == subject.ID).OrderBy(o => o.Order);
+                            foreach (var sub in subs)
+                            {
+                                worksheet.Cells[row, col].Value = 0; col++;
+                            }
+                            continue;
+                        }
                         var type1cnt = 0;
                         var type2cnt = 0;
                         var type3cnt = 0;
@@ -1618,7 +1628,7 @@ namespace tuexamapi.Controllers
                             }
                             else
                             {
-                                worksheet.Cells[row, col].Value =1; col++;
+                                worksheet.Cells[row, col].Value = 1; col++;
                             }
 
                             if (percents >= 70)
@@ -1627,7 +1637,7 @@ namespace tuexamapi.Controllers
                             }
                             else
                             {
-                                worksheet.Cells[row, col].Value =1; col++;
+                                worksheet.Cells[row, col].Value = 1; col++;
                             }
                             if (icnt > scnt)
                             {
@@ -1687,7 +1697,7 @@ namespace tuexamapi.Controllers
                                         }
                                         else
                                         {
-                                            worksheet.Cells[row, col].Value =1; col++;
+                                            worksheet.Cells[row, col].Value = 1; col++;
                                         }
                                     }
                                 }
@@ -1714,7 +1724,7 @@ namespace tuexamapi.Controllers
                                         }
                                         else
                                         {
-                                            worksheet.Cells[row, col].Value =1; col++;
+                                            worksheet.Cells[row, col].Value = 1; col++;
                                         }
                                     }
                                 }
@@ -1741,7 +1751,7 @@ namespace tuexamapi.Controllers
                                         }
                                         else
                                         {
-                                            worksheet.Cells[row, col].Value =1; col++;
+                                            worksheet.Cells[row, col].Value = 1; col++;
                                         }
                                     }
                                 }
@@ -1768,7 +1778,7 @@ namespace tuexamapi.Controllers
                                         }
                                         else
                                         {
-                                            worksheet.Cells[row, col].Value =1; col++;
+                                            worksheet.Cells[row, col].Value = 1; col++;
                                         }
                                     }
                                 }
@@ -1800,7 +1810,7 @@ namespace tuexamapi.Controllers
                                         }
                                         else
                                         {
-                                            worksheet.Cells[row, col].Value =1; col++;
+                                            worksheet.Cells[row, col].Value = 1; col++;
                                         }
                                     }
                                 }
@@ -2612,11 +2622,11 @@ namespace tuexamapi.Controllers
                     tablesubject.AddCell(cell);
 
                     var hasexam = false;
-
+                    var answeredcnt = 0;
                     var subsigns = new List<string>();
                     foreach (var sub in subs)
                     {
-                        var subsign = "\u25cb";
+                        var subsign = "";
                         subsigns.Add(subsign);
                     }
 
@@ -2628,10 +2638,13 @@ namespace tuexamapi.Controllers
                     {
                         tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tsresults.OrderByDescending(o => o.Exam.ExamDate).FirstOrDefault().ID);
                         if (tsanswers != null || tsanswers.Count() > 0)
+                        {
                             hasexam = true;
+                            answeredcnt = tsanswers.Where(w => w.Answered).Count();
+                        }
                     }
 
-                    if (hasexam == false)
+                    if (hasexam == false | answeredcnt == 0)
                     {
                         foreach (var sub in subs)
                         {
@@ -2658,6 +2671,10 @@ namespace tuexamapi.Controllers
                             cell.VerticalAlignment = Element.ALIGN_MIDDLE;
                             tablesubject.AddCell(cell);
                             subindex++;
+                        }
+                        if (answeredcnt == 0)
+                        {
+                            desc.AppendLine("ไม่ได้ทำข้อสอบ");
                         }
                         cell = new PdfPCell(new Phrase(desc.ToString(), font));
                         cell.Padding = 5;
@@ -3408,11 +3425,11 @@ namespace tuexamapi.Controllers
                 tablesubject.AddCell(cell);
 
                 var hasexam = false;
-
+                var answeredcnt = 0;
                 var subsigns = new List<string>();
                 foreach (var sub in subs)
                 {
-                    var subsign = "\u25cb";
+                    var subsign = "";
                     subsigns.Add(subsign);
                 }
 
@@ -3428,10 +3445,13 @@ namespace tuexamapi.Controllers
                 {
                     tsanswers = _context.TestResultStudentQAnies.Include(i => i.Question).Where(w => w.TestResultStudentID == tsresults.OrderByDescending(o => o.Exam.ExamDate).FirstOrDefault().ID);
                     if (tsanswers != null || tsanswers.Count() > 0)
+                    {
                         hasexam = true;
+                        answeredcnt = tsanswers.Where(w => w.Answered).Count();
+                    }
                 }
 
-                if (hasexam == false)
+                if (hasexam == false | answeredcnt == 0)
                 {
                     foreach (var sub in subs)
                     {
@@ -3458,6 +3478,10 @@ namespace tuexamapi.Controllers
                         cell.VerticalAlignment = Element.ALIGN_MIDDLE;
                         tablesubject.AddCell(cell);
                         subindex++;
+                    }
+                    if (answeredcnt == 0)
+                    {
+                        desc.AppendLine("ไม่ได้ทำข้อสอบ");
                     }
                     cell = new PdfPCell(new Phrase(desc.ToString(), font));
                     cell.Padding = 5;
@@ -3638,11 +3662,11 @@ namespace tuexamapi.Controllers
                     cell.VerticalAlignment = Element.ALIGN_MIDDLE;
                     tablesubject.AddCell(cell);
 
-                    if (icnt > scnt )
+                    if (icnt > scnt)
                     {
                         subsigns[subindex] = "\u25cb"; subindex++;
                         cell = new PdfPCell(new Phrase("\u25cb", fontuni)); // white
-                        
+
                     }
                     else if (scnt > icnt)
                     {
@@ -3651,7 +3675,7 @@ namespace tuexamapi.Controllers
                     }
                     else
                     {
-                        if(percents > percenti)
+                        if (percents > percenti)
                         {
                             subsigns[subindex] = "\u25CF"; subindex++;
                             cell = new PdfPCell(new Phrase("\u25CF", fontuni)); // black
